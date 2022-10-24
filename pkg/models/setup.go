@@ -3,20 +3,19 @@
 package models
 
 import (
-  "gorm.io/gorm"
-  "gorm.io/driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-var DB *gorm.DB
+func ConnectDatabase(sqlurl string) *gorm.DB {
+	database, err := gorm.Open(mysql.Open(sqlurl), &gorm.Config{})
 
-func ConnectDatabase(sqlurl string) {
-  database, err := gorm.Open(mysql.Open(sqlurl), &gorm.Config{})
+	if err != nil {
+		panic("Failed to connect to database!")
+	}
 
-  if err != nil {
-    panic("Failed to connect to database!")
-  }
+	database.AutoMigrate(&Movie{})
+	database.AutoMigrate(&User{})
 
-  database.AutoMigrate(&Movie{})
-
-  DB = database
+	return database
 }

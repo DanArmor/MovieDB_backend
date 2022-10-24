@@ -1,39 +1,53 @@
 package main
 
 import (
-  //"net/http"
-  "log"
-  "os"
-  "github.com/gin-gonic/gin"
-  "github.com/MovieDB_backend/pkg/config"
-  "github.com/MovieDB_backend/pkg/models"
-  "github.com/MovieDB_backend/pkg/controllers"
+	//"net/http"
+	"log"
+	"os"
+
+	"github.com/MovieDB_backend/pkg/config"
+	"github.com/MovieDB_backend/pkg/controllers"
+	"github.com/MovieDB_backend/pkg/models"
+	"github.com/MovieDB_backend/pkg/utils"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
-  // Логер
-  infoLog := log.New(os.Stderr, "\033[32mINFO\033[0m\t", log.Ldate|log.Ltime)
-  // Грузим конфигурацию
-  c, err := config.LoadConfig()
-  if err != nil {
-    log.Fatalln("failed at config parse! ", err)
-  }
-  infoLog.Println("SqlUrl:", c.SqlUrl)
-  infoLog.Println("Port:", c.Port)
+	// Логер
+	infoLog := log.New(os.Stderr, "\033[32mINFO\033[0m\t", log.Ldate|log.Ltime)
+	// Грузим конфигурацию
+	c, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalln("failed at config parse! ", err)
+	}
+	infoLog.Println("SqlUrl:", c.SqlUrl)
+	infoLog.Println("Port:", c.Port)
 
-  // Подключаемся к ДБ
-  models.ConnectDatabase(c.SqlUrl)
+	// Создаем сервер
+	r := gin.Default()
+	jwt := utils.JwtWrapper{
+		SecretKey:       c.JWTsecret,
+		Issuer:          "MovieDB_backend",
+		ExpirationHours: 24 * 7,
+	}
 
-  // Создаем сервер
-  r := gin.Default()
+	// Подключаемся к ДБ и т п
+	service := controllers.Service{
+		Jwt: jwt,
+		DB:  models.ConnectDatabase(c.SqlUrl),
+	}
+	// Эндпоинты
+	private := r.Group("/api")
+	private.Use(service.ValidateToken)
+	private.GET("/movies", service.FindMovies)
+	private.GET("/movies/:id", service.FindMovie)
+	private.POST("/movies", service.CreateMovie)
+	private.PATCH("/movies/:id", service.UpdateMovie)
+	private.DELETE("/movies/:id", service.DeleteMovie)
 
-  // Эндпоинты
-  r.GET("/movies", controllers.FindMovies)
-  r.GET("/movies/:id", controllers.FindMovie)
-  r.POST("/movies", controllers.CreateMovie)
-  r.PATCH("/movies/:id", controllers.UpdateMovie)
-  r.DELETE("/movies/:id", controllers.DeleteMovie)
+	public := r.Group("/auth")
+	public.POST("/login", service.LoginUser)
 
-  // Запускаем сервер
-  r.Run(c.Port)
+	// Запускаем сервер
+	r.Run(c.Port)
 }

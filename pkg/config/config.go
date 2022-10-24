@@ -3,8 +3,9 @@ package config
 import "github.com/spf13/viper"
 
 type Config struct {
-	Port   string `mapstructure:"PORT"`
-	SqlUrl string `mapstructure:"SqlUrl"`
+	Port      string `mapstructure:"PORT"`
+	SqlUrl    string `mapstructure:"SqlUrl"`
+	JWTsecret string `mapstructure:"JWT_SECRET_KEY"`
 }
 
 func LoadConfig() (c Config, err error) {
