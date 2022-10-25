@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/MovieDB_backend/pkg/models"
+	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/golang-jwt/jwt"
 )
 

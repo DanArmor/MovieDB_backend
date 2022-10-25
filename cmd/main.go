@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/MovieDB_backend/pkg/config"
-	"github.com/MovieDB_backend/pkg/controllers"
-	"github.com/MovieDB_backend/pkg/models"
-	"github.com/MovieDB_backend/pkg/utils"
+	"github.com/DanArmor/MovieDB_backend/pkg/config"
+	"github.com/DanArmor/MovieDB_backend/pkg/controllers"
+	"github.com/DanArmor/MovieDB_backend/pkg/models"
+	"github.com/DanArmor/MovieDB_backend/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
 

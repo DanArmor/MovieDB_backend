@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/MovieDB_backend/pkg/utils"
+	"github.com/DanArmor/MovieDB_backend/pkg/utils"
 	"gorm.io/gorm"
 )
 

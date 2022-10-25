@@ -1,4 +1,4 @@
-module github.com/MovieDB_backend
+module github.com/DanArmor/MovieDB_backend
 
 go 1.18
 

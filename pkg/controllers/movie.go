@@ -3,7 +3,7 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/MovieDB_backend/pkg/models"
+	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
