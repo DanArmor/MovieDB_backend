@@ -50,7 +50,7 @@ func (s *Service) ValidateToken(c *gin.Context) {
 	claims, err := s.Jwt.ValidateToken(token)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		return
 	}
 	var user models.User
