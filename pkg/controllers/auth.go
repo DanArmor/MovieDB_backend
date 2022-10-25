@@ -51,10 +51,12 @@ func (s *Service) ValidateToken(c *gin.Context) {
 
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
 	}
 	var user models.User
 	if result := s.DB.Where(&models.User{Email: claims.Email}).First(&user); result.Error != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found!"})
+		return
 	}
 
 	c.Next()
