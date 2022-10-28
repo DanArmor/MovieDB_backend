@@ -22,8 +22,10 @@ type MovieType struct {
 }
 
 type Poster struct {
-	ID  int64  `json:"id" gorm:"primary_key"`
-	Url string `json:"url"`
+	ID      int64  `json:"id" gorm:"primary_key"`
+	Url     string `json:"url"`
+	MovieID int64  `json:"movie_id"`
+	Movie   Movie
 }
 
 type Rater struct {

@@ -150,7 +150,7 @@ func (s *Service) CreatePremier(c *gin.Context) {
 }
 
 type CreateRatingInput struct {
-	MovieID       int64     `json:"movie_id" binding:"required"`
+	MovieID int64   `json:"movie_id" binding:"required"`
 	RaterID int64   `json:"rating_id" binding:"required"`
 	Score   float32 `json:"score" gorm:"precision:1" binding:"required"`
 }
@@ -168,6 +168,24 @@ func (s *Service) CreateRating(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": rating})
 }
 
+type CreatePosterInput struct {
+	MovieID int64  `json:"movie_id" binding:"required"`
+	Url     string `json:"url" binding:"required"`
+}
+
+func (s *Service) CreatePoster(c *gin.Context) {
+	var input CreatePosterInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	poster := models.Poster{Url: input.Url, MovieID: input.MovieID}
+	s.DB.Create(&poster)
+
+	c.JSON(http.StatusOK, gin.H{"data": poster})
+}
+
 type CreateSimpleInput struct {
 	Type string `json:"type" binding:"required"`
 	Name string `json:"name" binding:"required"`
@@ -179,27 +197,38 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var data interface{}
 	switch {
 	case input.Type == "country":
-		data = models.Country{Name: input.Name}
+		data := models.Country{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "genre":
-		data = models.Genre{Name: input.Name}
+		data := models.Genre{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "movie_type":
-		data = models.MovieType{Name: input.Name}
-	case input.Type == "poster":
-		data = models.Poster{Url: input.Name}
+		data := models.MovieType{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "premier_type":
-		data = models.PremierType{Name: input.Name}
+		data := models.PremierType{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "production_company":
-		data = models.ProductionCompany{Name: input.Name}
+		data := models.ProductionCompany{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "profession":
-		data = models.Profession{NameEn: input.Name}
+		data := models.Profession{NameEn: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "rater":
-		data = models.Rater{Name: input.Name}
+		data := models.Rater{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "status":
-		data = models.Status{Name: input.Name}
+		data := models.Status{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, gin.H{"data": data})
 	}
-	s.DB.Create(&data)
-	c.JSON(http.StatusOK, gin.H{"data": data})
 }

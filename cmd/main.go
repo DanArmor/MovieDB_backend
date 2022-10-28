@@ -62,6 +62,7 @@ func main() {
 	admin.POST("/person_in_movie", service.CreatePersonInMovie)
 	admin.POST("/premier", service.CreatePremier)
 	admin.POST("/rating", service.CreateRating)
+	admin.POST("/poster", service.CreatePoster)
 
 	// Запускаем сервер
 	r.Run(c.Port)
