@@ -61,3 +61,18 @@ func (s *Service) ValidateToken(c *gin.Context) {
 
 	c.Next()
 }
+
+func (s *Service) ValidateAdmin(c *gin.Context) {
+	pass := c.Request.Header.Get("pass")
+	if pass == "" {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No admin password!"})
+		return
+	}
+
+	if utils.CheckPasswordHash(pass, s.AdminPass) == false{
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Wrong admin password!"})
+		return
+	}
+
+	c.Next()
+}

@@ -6,6 +6,7 @@ type Config struct {
 	Port      string `mapstructure:"PORT"`
 	SqlUrl    string `mapstructure:"SqlUrl"`
 	JWTsecret string `mapstructure:"JWT_SECRET_KEY"`
+	AdminPass string `mapstructure:"ADMIN_PASS"`
 }
 
 func LoadConfig() (c Config, err error) {

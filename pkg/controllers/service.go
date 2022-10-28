@@ -6,6 +6,7 @@ import (
 )
 
 type Service struct {
-	Jwt utils.JwtWrapper
-	DB  *gorm.DB
+	Jwt       utils.JwtWrapper
+	DB        *gorm.DB
+	AdminPass string
 }

@@ -17,6 +17,8 @@ func main() {
 	infoLog := log.New(os.Stderr, "\033[32mINFO\033[0m\t", log.Ldate|log.Ltime)
 	// Грузим конфигурацию
 	c, err := config.LoadConfig()
+	c.AdminPass = utils.HashPassword(c.AdminPass)
+
 	if err != nil {
 		log.Fatalln("failed at config parse! ", err)
 	}
@@ -35,18 +37,31 @@ func main() {
 	service := controllers.Service{
 		Jwt: jwt,
 		DB:  models.ConnectDatabase(c.SqlUrl),
+		AdminPass: c.AdminPass,
 	}
 	// Эндпоинты
 	private := r.Group("/api")
 	private.Use(service.ValidateToken)
 	private.GET("/movies", service.FindMovies)
 	private.GET("/movies/:id", service.FindMovie)
-	private.POST("/movies", service.CreateMovie)
-	private.PATCH("/movies/:id", service.UpdateMovie)
-	private.DELETE("/movies/:id", service.DeleteMovie)
+	//private.POST("/movies", service.CreateMovie)
+	//private.PATCH("/movies/:id", service.UpdateMovie)
+	//private.DELETE("/movies/:id", service.DeleteMovie)
 
 	public := r.Group("/auth")
 	public.POST("/login", service.LoginUser)
+
+	admin := r.Group("/admin")
+	admin.Use(service.ValidateAdmin)
+	admin.POST("/simple", service.CreateSimpleData)
+	admin.POST("/budget", service.CreateBudget)
+	admin.POST("/fees", service.CreateFees)
+	admin.POST("/movie_genres", service.CreateMovieGenreLink)
+	admin.POST("/movie", service.CreateMovie)
+	admin.POST("/person", service.CreatePerson)
+	admin.POST("/person_in_movie", service.CreatePersonInMovie)
+	admin.POST("/premier", service.CreatePremier)
+	admin.POST("/rating", service.CreateRating)
 
 	// Запускаем сервер
 	r.Run(c.Port)
