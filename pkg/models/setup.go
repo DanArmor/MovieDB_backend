@@ -14,8 +14,25 @@ func ConnectDatabase(sqlurl string) *gorm.DB {
 		panic("Failed to connect to database!")
 	}
 
-	database.AutoMigrate(&Movie{})
 	database.AutoMigrate(&User{})
+
+	database.AutoMigrate(&Movie{})
+	database.AutoMigrate(&MovieType{})
+	database.AutoMigrate(&Poster{})
+	database.AutoMigrate(&Rater{})
+	database.AutoMigrate(&Rating{})
+	database.AutoMigrate(&Budget{})
+	database.AutoMigrate(&Fees{})
+	database.AutoMigrate(&PremierType{})
+	database.AutoMigrate(&Premier{})
+	database.AutoMigrate(&Status{})
+	database.AutoMigrate(&Genre{})
+	database.AutoMigrate(&MovieGenres{})
+	database.AutoMigrate(&Country{})
+	database.AutoMigrate(&Person{})
+	database.AutoMigrate(&ProductionCompane{})
+	database.AutoMigrate(&Profession{})
+	database.AutoMigrate(&PersonInMovie{})
 
 	return database
 }

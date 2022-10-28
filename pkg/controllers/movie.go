@@ -15,8 +15,7 @@ func (s *Service) FindMovies(c *gin.Context) {
 }
 
 type CreateMovieInput struct {
-	Title  string `json:"title" binding:"required"`
-	Author string `json:"author" binding:"required"`
+	Name  string `json:"name" binding:"required"`
 }
 
 // POST /movies
@@ -29,7 +28,7 @@ func (s *Service) CreateMovie(c *gin.Context) {
 	}
 
 	// Create
-	movie := models.Movie{Title: input.Title, Author: input.Author}
+	movie := models.Movie{Name: input.Name}
 	s.DB.Create(&movie)
 
 	c.JSON(http.StatusOK, gin.H{"data": movie})
@@ -49,8 +48,7 @@ func (s *Service) FindMovie(c *gin.Context) {
 }
 
 type UpdateMovieInput struct {
-	Title  string `json:"title"`
-	Author string `json:"author"`
+	Name  string `json:"name"`
 }
 
 // PATCH /movies/:id
@@ -68,7 +66,7 @@ func (s *Service) UpdateMovie(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	updateMovie := models.Movie{Title: input.Title, Author: input.Author}
+	updateMovie := models.Movie{Name: input.Name}
 	s.DB.Model(&movie).Updates(updateMovie)
 
 	c.JSON(http.StatusOK, gin.H{"data": movie})
