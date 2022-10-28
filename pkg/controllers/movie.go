@@ -14,25 +14,6 @@ func (s *Service) FindMovies(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": movies})
 }
 
-type CreateMovieInput struct {
-	Name  string `json:"name" binding:"required"`
-}
-
-// POST /movies
-func (s *Service) CreateMovie(c *gin.Context) {
-	// Validate
-	var input CreateMovieInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Create
-	movie := models.Movie{Name: input.Name}
-	s.DB.Create(&movie)
-
-	c.JSON(http.StatusOK, gin.H{"data": movie})
-}
 
 // GET /movies
 // Find a movie

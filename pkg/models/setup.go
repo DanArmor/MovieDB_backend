@@ -30,7 +30,7 @@ func ConnectDatabase(sqlurl string) *gorm.DB {
 	database.AutoMigrate(&MovieGenres{})
 	database.AutoMigrate(&Country{})
 	database.AutoMigrate(&Person{})
-	database.AutoMigrate(&ProductionCompane{})
+	database.AutoMigrate(&ProductionCompany{})
 	database.AutoMigrate(&Profession{})
 	database.AutoMigrate(&PersonInMovie{})
 

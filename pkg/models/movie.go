@@ -10,10 +10,10 @@ type Movie struct {
 	Year                int64  `json:"year"`
 	StatusID            int64  `json:"status_id"`
 	MovieLength         int64  `json:"length"`
-	ProductionCompaneID int64  `json:"production_company_id"`
+	ProductionCompanyID int64  `json:"production_company_id"`
 	Status              Status
 	MovieType           MovieType
-	ProductionCompane   ProductionCompane
+	ProductionCompany   ProductionCompany
 }
 
 type MovieType struct {
@@ -102,22 +102,23 @@ type Person struct {
 	Description string `json:"description"`
 }
 
-type ProductionCompane struct {
+type ProductionCompany struct {
 	ID   int64  `json:"id" gorm:"primary_key"`
 	Name string `json:"name"`
 }
 
 type Profession struct {
 	ID     int64  `json:"id" gorm:"primary_key"`
-	Name   string `json:"name"`
 	NameEn string `json:"name_en"`
 }
 
 type PersonInMovie struct {
 	ID           int64  `json:"id" gorm:"primary_key"`
+	MovieID      int64  `json:"movie_id"`
 	PersonID     string `json:"name"`
 	ProfessionID string `json:"name_en"`
 	Description  string `json:"description"`
 	Person       Person
 	Profession   Profession
+	Movie        Movie
 }
