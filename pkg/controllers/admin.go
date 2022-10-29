@@ -4,7 +4,6 @@ import (
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"time"
 )
 
 type CreateBudgetInput struct {
@@ -62,13 +61,17 @@ func (s *Service) CreateMovieGenreLink(c *gin.Context) {
 }
 
 type CreateMovieInput struct {
-	MovieTypeID         int64  `json:"movie_type_id" binding:"required"`
-	Name                string `json:"name" binding:"required"`
-	Description         string `json:"description" binding:"required"`
-	Year                int64  `json:"year" binding:"required"`
-	StatusID            int64  `json:"status_id" binding:"required"`
-	MovieLength         int64  `json:"length" binding:"required"`
-	ProductionCompanyID int64  `json:"production_company_id" binding:"required"`
+	MovieTypeID         int64   `json:"movie_type_id" binding:"required"`
+	Name                string  `json:"name" binding:"required"`
+	Description         string  `json:"description" binding:"required"`
+	Year                int64   `json:"year" binding:"required"`
+	StatusID            int64   `json:"status_id" binding:"required"`
+	Duration            int64   `json:"duration" binding:"required"`
+	ProductionCompanyID int64   `json:"production_company_id" binding:"required"`
+	Score               float32 `json:"score" binding:"required"`
+	Votes               int64   `json:"votes" binding:"required"`
+	Premier             string  `json:"premier" binding:"required"`
+	AgeRating           int64   `json:"age_rating" binding:"required"`
 }
 
 // POST /movies
@@ -83,7 +86,8 @@ func (s *Service) CreateMovie(c *gin.Context) {
 	// Create
 	movie := models.Movie{Name: input.Name, Description: input.Description,
 		Year: input.Year, StatusID: input.StatusID,
-		MovieLength: input.MovieLength, ProductionCompanyID: input.ProductionCompanyID}
+		Duration: input.Duration, ProductionCompanyID: input.ProductionCompanyID,
+		Score: input.Score, Votes: input.Votes}
 	s.DB.Create(&movie)
 
 	c.JSON(http.StatusOK, gin.H{"data": movie})
@@ -128,25 +132,6 @@ func (s *Service) CreatePersonInMovie(c *gin.Context) {
 	s.DB.Create(&person)
 
 	c.JSON(http.StatusOK, gin.H{"data": person})
-}
-
-type CreatePremierInput struct {
-	MovieID       int64     `json:"movie_id" binding:"required"`
-	PremierTypeID int64     `json:"premier_type" binding:"required"`
-	Date          time.Time `json:"date" binding:"required"`
-}
-
-func (s *Service) CreatePremier(c *gin.Context) {
-	var input CreatePremierInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	premier := models.Premier{MovieID: input.MovieID, PremierTypeID: input.PremierTypeID, Date: input.Date}
-	s.DB.Create(&premier)
-
-	c.JSON(http.StatusOK, gin.H{"data": premier})
 }
 
 type CreateRatingInput struct {
@@ -208,10 +193,6 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "movie_type":
 		data := models.MovieType{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "premier_type":
-		data := models.PremierType{Name: input.Name}
 		s.DB.Create(&data)
 		c.JSON(http.StatusOK, gin.H{"data": data})
 	case input.Type == "production_company":

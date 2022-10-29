@@ -60,7 +60,6 @@ func main() {
 	admin.POST("/movie", service.CreateMovie)
 	admin.POST("/person", service.CreatePerson)
 	admin.POST("/person_in_movie", service.CreatePersonInMovie)
-	admin.POST("/premier", service.CreatePremier)
 	admin.POST("/rating", service.CreateRating)
 	admin.POST("/poster", service.CreatePoster)
 

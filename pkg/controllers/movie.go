@@ -7,13 +7,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type PostPersonalRatingInput struct {
+	MovieID int64 `json:"movie_id" binding:"required"`
+	UserID  int64 `json:"user_id" binding:"require"`
+	Score   int64 `json:"score" binding:"require"`
+}
+
 func (s *Service) FindMovies(c *gin.Context) {
 	var movies []models.Movie
 	s.DB.Find(&movies)
 
 	c.JSON(http.StatusOK, gin.H{"data": movies})
 }
-
 
 // GET /movies
 // Find a movie
@@ -29,7 +34,7 @@ func (s *Service) FindMovie(c *gin.Context) {
 }
 
 type UpdateMovieInput struct {
-	Name  string `json:"name"`
+	Name string `json:"name"`
 }
 
 // PATCH /movies/:id

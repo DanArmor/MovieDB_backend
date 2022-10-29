@@ -1,16 +1,18 @@
 package models
 
-import "time"
-
 type Movie struct {
-	ID                  int64  `json:"id" gorm:"primary_key"`
-	MovieTypeID         int64  `json:"movie_type_id"`
-	Name                string `json:"name"`
-	Description         string `json:"description"`
-	Year                int64  `json:"year"`
-	StatusID            int64  `json:"status_id"`
-	MovieLength         int64  `json:"length"`
-	ProductionCompanyID int64  `json:"production_company_id"`
+	ID                  int64   `json:"id" gorm:"primary_key"`
+	MovieTypeID         int64   `json:"movie_type_id"`
+	Name                string  `json:"name"`
+	Description         string  `json:"description"`
+	Year                int64   `json:"year"`
+	StatusID            int64   `json:"status_id"`
+	Duration            int64   `json:"duration"`
+	ProductionCompanyID int64   `json:"production_company_id"`
+	Score               float32 `json:"my_rate" gorm:"precision:1"`
+	Votes               int64   `json:"votes"`
+	Premier             string  `json:"premier"`
+	AgeRating           int64   `json:"age_rating"`
 	Status              Status
 	MovieType           MovieType
 	ProductionCompany   ProductionCompany
@@ -25,6 +27,15 @@ type Poster struct {
 	ID      int64  `json:"id" gorm:"primary_key"`
 	Url     string `json:"url"`
 	MovieID int64  `json:"movie_id"`
+	Movie   Movie
+}
+
+type PersonalRating struct {
+	ID      int64 `json:"id" gorm:"primary_key"`
+	MovieID int64 `json:"movie_id"`
+	UserID  int64 `json:"user_id"`
+	Score   int64 `json:"score"`
+	User    User
 	Movie   Movie
 }
 
@@ -57,20 +68,6 @@ type Fees struct {
 	Currency string `json:"currency"`
 	Area     string `json:"area"`
 	Movie    Movie
-}
-
-type PremierType struct {
-	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
-}
-
-type Premier struct {
-	ID            int64     `json:"id" gorm:"primary_key"`
-	MovieID       int64     `json:"movie_id"`
-	PremierTypeID int64     `json:"premier_type"`
-	Date          time.Time `json:"date"`
-	PremierType   PremierType
-	Movie         Movie
 }
 
 type Status struct {
