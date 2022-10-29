@@ -237,10 +237,109 @@ func (s *Service) FindSimple(c *gin.Context) {
 	field := c.Query("field")
 	value := c.Query("value")
 	switch{
+	case t == "movie":
+		err = s.DB.Model(&models.Movie{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "movie_type":
+		err = s.DB.Model(&models.MovieType{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "poster":
+		err = s.DB.Model(&models.Poster{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "personal_rating":
+		err = s.DB.Model(&models.PersonalRating{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "rater":
+		err = s.DB.Model(&models.Rater{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "rating":
+		err = s.DB.Model(&models.Rating{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "budget":
+		err = s.DB.Model(&models.Budget{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "fees":
+		err = s.DB.Model(&models.Fees{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "status":
+		err = s.DB.Model(&models.Status{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
 	case t == "genre":
 		err = s.DB.Model(&models.Genre{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "movie_genre":
+		err = s.DB.Model(&models.MovieGenres{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "country":
+		err = s.DB.Model(&models.Country{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "person":
+		err = s.DB.Model(&models.Person{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "production_company":
+		err = s.DB.Model(&models.ProductionCompany{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "profession":
+		err = s.DB.Model(&models.Profession{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "person_in_movie":
+		err = s.DB.Model(&models.PersonInMovie{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
 	case t == "user":
 		err = s.DB.Model(&models.User{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong type!"})
+		return
+	}
+	
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (s *Service) FindSimpleAll(c *gin.Context) {
+	result := []map[string]interface{}{}
+	var err error
+	err = nil
+
+	if _, has := c.GetQuery("type"); has == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No type to find"})
+		return
+	}
+	if _, has := c.GetQuery("field"); has == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No field to find"})
+		return
+	}
+	if _, has := c.GetQuery("value"); has == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No value to find"})
+		return
+	}
+
+	t := c.Query("type");
+	field := c.Query("field")
+	value := c.Query("value")
+	switch{
+	case t == "movie":
+		err = s.DB.Model(&models.Movie{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "movie_type":
+		err = s.DB.Model(&models.MovieType{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "poster":
+		err = s.DB.Model(&models.Poster{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "personal_rating":
+		err = s.DB.Model(&models.PersonalRating{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "rater":
+		err = s.DB.Model(&models.Rater{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "rating":
+		err = s.DB.Model(&models.Rating{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "budget":
+		err = s.DB.Model(&models.Budget{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "fees":
+		err = s.DB.Model(&models.Fees{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "status":
+		err = s.DB.Model(&models.Status{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "genre":
+		err = s.DB.Model(&models.Genre{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "movie_genre":
+		err = s.DB.Model(&models.MovieGenres{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "country":
+		err = s.DB.Model(&models.Country{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "person":
+		err = s.DB.Model(&models.Person{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "production_company":
+		err = s.DB.Model(&models.ProductionCompany{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "profession":
+		err = s.DB.Model(&models.Profession{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "person_in_movie":
+		err = s.DB.Model(&models.PersonInMovie{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "user":
+		err = s.DB.Model(&models.User{}).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong type!"})
 		return
