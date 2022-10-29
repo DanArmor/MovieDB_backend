@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type CreateBudgetInput struct {
@@ -70,7 +72,6 @@ type CreateMovieInput struct {
 	ProductionCompanyID int64   `json:"production_company_id" binding:"required"`
 	Score               float32 `json:"score" binding:"required"`
 	Votes               int64   `json:"votes" binding:"required"`
-	Premier             string  `json:"premier" binding:"required"`
 	AgeRating           int64   `json:"age_rating" binding:"required"`
 }
 
@@ -212,4 +213,43 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		s.DB.Create(&data)
 		c.JSON(http.StatusOK, gin.H{"data": data})
 	}
+}
+
+func (s *Service) FindSimple(c *gin.Context) {
+	result := map[string]interface{}{}
+	var err error
+	err = nil
+
+	if _, has := c.GetQuery("type"); has == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No type to find"})
+		return
+	}
+	if _, has := c.GetQuery("field"); has == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No field to find"})
+		return
+	}
+	if _, has := c.GetQuery("value"); has == false {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No value to find"})
+		return
+	}
+
+	t := c.Query("type");
+	field := c.Query("field")
+	value := c.Query("value")
+	switch{
+	case t == "genre":
+		err = s.DB.Model(&models.Genre{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	case t == "user":
+		err = s.DB.Model(&models.User{}).First(&result, fmt.Sprintf("%s = ?", field), value).Error
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Wrong type!"})
+		return
+	}
+	
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }

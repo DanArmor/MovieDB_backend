@@ -11,7 +11,6 @@ type Movie struct {
 	ProductionCompanyID int64   `json:"production_company_id"`
 	Score               float32 `json:"my_rate" gorm:"precision:1"`
 	Votes               int64   `json:"votes"`
-	Premier             string  `json:"premier"`
 	AgeRating           int64   `json:"age_rating"`
 	Status              Status
 	MovieType           MovieType
