@@ -155,8 +155,9 @@ func (s *Service) CreateRating(c *gin.Context) {
 }
 
 type CreatePosterInput struct {
-	MovieID int64  `json:"movie_id" binding:"required"`
-	Url     string `json:"url" binding:"required"`
+	MovieID    int64  `json:"movie_id" binding:"required"`
+	Url        string `json:"url" binding:"required"`
+	PosterTypeID int64  `json:"poster_type_id" binding:"required"`
 }
 
 func (s *Service) CreatePoster(c *gin.Context) {
@@ -166,7 +167,7 @@ func (s *Service) CreatePoster(c *gin.Context) {
 		return
 	}
 
-	poster := models.Poster{Url: input.Url, MovieID: input.MovieID}
+	poster := models.Poster{Url: input.Url, MovieID: input.MovieID, PosterTypeID: input.PosterTypeID}
 	s.DB.Create(&poster)
 
 	c.JSON(http.StatusOK, gin.H{"data": poster})
@@ -184,34 +185,34 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		return
 	}
 	switch {
-	case input.Type == "country":
+	case input.Type == "countries":
 		data := models.Country{Name: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "genre":
+		c.JSON(http.StatusOK, data)
+	case input.Type == "genres":
 		data := models.Genre{Name: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "movie_type":
+		c.JSON(http.StatusOK, data)
+	case input.Type == "movie_types":
 		data := models.MovieType{Name: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "production_company":
+		c.JSON(http.StatusOK, data)
+	case input.Type == "production_companies":
 		data := models.ProductionCompany{Name: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "profession":
+		c.JSON(http.StatusOK, data)
+	case input.Type == "professions":
 		data := models.Profession{NameEn: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "rater":
+		c.JSON(http.StatusOK, data)
+	case input.Type == "raters":
 		data := models.Rater{Name: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
-	case input.Type == "status":
+		c.JSON(http.StatusOK, data)
+	case input.Type == "statuses":
 		data := models.Status{Name: input.Name}
 		s.DB.Create(&data)
-		c.JSON(http.StatusOK, gin.H{"data": data})
+		c.JSON(http.StatusOK, data)
 	}
 }
 
@@ -233,7 +234,7 @@ func (s *Service) FindSimple(c *gin.Context) {
 		return
 	}
 
-	t := c.Query("type");
+	t := c.Query("type")
 	field := c.Query("field")
 	value := c.Query("value")
 	err = s.DB.Table(t).Take(&result, fmt.Sprintf("%s = ?", field), value).Error
@@ -266,19 +267,19 @@ func (s *Service) FindSimpleAll(c *gin.Context) {
 		}
 	}
 
-	t := c.Query("type");
+	t := c.Query("type")
 	if hasField {
 		field := c.Query("field")
 		value := c.Query("value")
 		err = s.DB.Table(t).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
-	} else{
+	} else {
 		err = s.DB.Table(t).Find(&result).Error
 	}
-	
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{t : result})
+	c.JSON(http.StatusOK, gin.H{t: result})
 }

@@ -22,11 +22,18 @@ type MovieType struct {
 	Name string `json:"name"`
 }
 
+type PosterType struct {
+	ID   int64  `json:"id" gorm:"primary_key"`
+	Name string `json:"name"`
+}
+
 type Poster struct {
-	ID      int64  `json:"id" gorm:"primary_key"`
-	Url     string `json:"url"`
-	MovieID int64  `json:"movie_id"`
-	Movie   Movie
+	ID           int64  `json:"id" gorm:"primary_key"`
+	Url          string `json:"url"`
+	MovieID      int64  `json:"movie_id"`
+	PosterTypeID int64  `json:"poster_type_id"`
+	Movie        Movie
+	PosterType   PosterType
 }
 
 type PersonalRating struct {
