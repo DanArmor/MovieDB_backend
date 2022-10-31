@@ -2,6 +2,7 @@ package models
 
 type Movie struct {
 	ID                  int64   `json:"id" gorm:"primary_key"`
+	ExternalID          int64   `json:"external_id"`
 	MovieTypeID         int64   `json:"movie_type_id"`
 	Name                string  `json:"name"`
 	Description         string  `json:"description"`
@@ -43,28 +44,6 @@ type PersonalRating struct {
 	Score   int64 `json:"score"`
 	User    User
 	Movie   Movie
-}
-
-type Rater struct {
-	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
-}
-
-type Rating struct {
-	ID      int64   `json:"id" gorm:"primary_key"`
-	MovieID int64   `json:"movie_id"`
-	RaterID int64   `json:"rating_id"`
-	Score   float32 `json:"score" gorm:"precision:1"`
-	Movie   Movie
-	Rater   Rater
-}
-
-type Budget struct {
-	ID       int64  `json:"id" gorm:"primary_key"`
-	MovieID  int64  `json:"movie_id"`
-	Value    int64  `json:"value"`
-	Currency string `json:"currency"`
-	Movie    Movie
 }
 
 type Fees struct {

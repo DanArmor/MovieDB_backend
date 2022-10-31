@@ -14,18 +14,6 @@ type CreateBudgetInput struct {
 	Currency string `json:"currency" binding:"required"`
 }
 
-func (s *Service) CreateBudget(c *gin.Context) {
-	var input CreateBudgetInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	budget := models.Budget{MovieID: input.MovieID, Value: input.Value, Currency: input.Currency}
-	s.DB.Create(&budget)
-
-	c.JSON(http.StatusOK, gin.H{"data": budget})
-}
-
 type CreateFeesInput struct {
 	MovieID  int64  `json:"movie_id" binding:"required"`
 	Value    int64  `json:"value" binding:"required"`
@@ -141,19 +129,6 @@ type CreateRatingInput struct {
 	Score   float32 `json:"score" gorm:"precision:1" binding:"required"`
 }
 
-func (s *Service) CreateRating(c *gin.Context) {
-	var input CreateRatingInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	rating := models.Rating{MovieID: input.MovieID, RaterID: input.RaterID, Score: input.Score}
-	s.DB.Create(&rating)
-
-	c.JSON(http.StatusOK, gin.H{"data": rating})
-}
-
 type CreatePosterInput struct {
 	MovieID    int64  `json:"movie_id" binding:"required"`
 	Url        string `json:"url" binding:"required"`
@@ -203,10 +178,6 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		c.JSON(http.StatusOK, data)
 	case input.Type == "professions":
 		data := models.Profession{NameEn: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
-	case input.Type == "raters":
-		data := models.Rater{Name: input.Name}
 		s.DB.Create(&data)
 		c.JSON(http.StatusOK, data)
 	case input.Type == "statuses":
