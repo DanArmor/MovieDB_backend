@@ -15,7 +15,7 @@ type CreateFeesInput struct {
 	MovieID  int64  `json:"movie_id" binding:"required"`
 	Value    int64  `json:"value" binding:"required"`
 	Currency string `json:"currency" binding:"required"`
-	Area     string `json:"area" binding:"required"`
+	AreaID   int64  `json:"area_id" binding:"required"`
 }
 
 func (s *Service) CreateFees(c *gin.Context) {
@@ -24,7 +24,7 @@ func (s *Service) CreateFees(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	area := models.Fees{MovieID: input.MovieID, Value: input.Value, Currency: input.Currency, Area: input.Area}
+	area := models.Fees{MovieID: input.MovieID, Value: input.Value, Currency: input.Currency, AreaID: input.AreaID}
 	s.DB.Create(&area)
 
 	c.JSON(http.StatusOK, area)
@@ -48,15 +48,18 @@ func (s *Service) CreateMovieGenreLink(c *gin.Context) {
 }
 
 type CreateMovieInput struct {
-	MovieTypeID         int64   `json:"movie_type_id" binding:"required"`
-	Name                string  `json:"name" binding:"required"`
-	Description         string  `json:"description" binding:"required"`
-	Year                int64   `json:"year" binding:"required"`
-	StatusID            int64   `json:"status_id" binding:"required"`
-	Duration            int64   `json:"duration" binding:"required"`
-	Score               float32 `json:"score" binding:"required"`
-	Votes               int64   `json:"votes" binding:"required"`
-	AgeRating           int64   `json:"age_rating" binding:"required"`
+	ExternalID      int64   `json:"external_id" binding:"required"`
+	MovieTypeID     int64   `json:"movie_type_id" binding:"required"`
+	Name            string  `json:"name" binding:"required"`
+	AlternativeName string  `json:"alternative_name" binding:"required"`
+	Description     string  `json:"description" binding:"required"`
+	Year            int64   `json:"year" binding:"required"`
+	StatusID        int64   `json:"status_id" binding:"required"`
+	Duration        int64   `json:"duration"`
+	Score           float32 `json:"score" binding:"required"`
+	Votes           int64   `json:"votes" binding:"required"`
+	AgeRating       int64   `json:"age_rating"`
+	CountryID       int64   `json:"country_id" binding:"required"`
 }
 
 // POST /movies
@@ -71,16 +74,19 @@ func (s *Service) CreateMovie(c *gin.Context) {
 	// Create
 	movie := models.Movie{Name: input.Name, Description: input.Description,
 		Year: input.Year, StatusID: input.StatusID,
-		Duration: input.Duration, 
-		Score: input.Score, Votes: input.Votes}
+		Duration: input.Duration,
+		Score:    input.Score, Votes: input.Votes,
+		ExternalID: input.ExternalID, AlternativeName: input.AlternativeName,
+		CountryID: input.CountryID, MovieTypeID: input.MovieTypeID,
+		AgeRating: input.AgeRating}
 	s.DB.Create(&movie)
 
 	c.JSON(http.StatusOK, movie)
 }
 
 type CreatePersonInput struct {
-	Name        string `json:"name" binding:"required"`
-	NameEn      string `json:"name_en" binding:"required"`
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
 }
 
 func (s *Service) CreatePerson(c *gin.Context) {
@@ -97,10 +103,9 @@ func (s *Service) CreatePerson(c *gin.Context) {
 }
 
 type CreatePersonInMovieInput struct {
-	MovieID      int64  `json:"movie_id" binding:"required"`
-	PersonID     string `json:"name" binding:"required"`
-	ProfessionID string `json:"name_en" binding:"required"`
-	Description  string `json:"description" binding:"required"`
+	MovieID      int64 `json:"movie_id" binding:"required"`
+	PersonID     int64 `json:"person_id" binding:"required"`
+	ProfessionID int64 `json:"profession_id" binding:"required"`
 }
 
 func (s *Service) CreatePersonInMovie(c *gin.Context) {
@@ -110,7 +115,7 @@ func (s *Service) CreatePersonInMovie(c *gin.Context) {
 		return
 	}
 
-	person := models.PersonInMovie{MovieID: input.MovieID, PersonID: input.PersonID, ProfessionID: input.ProfessionID, Description: input.Description}
+	person := models.PersonInMovie{MovieID: input.MovieID, PersonID: input.PersonID, ProfessionID: input.ProfessionID}
 	s.DB.Create(&person)
 
 	c.JSON(http.StatusOK, person)
@@ -123,8 +128,8 @@ type CreateRatingInput struct {
 }
 
 type CreatePosterInput struct {
-	MovieID    int64  `json:"movie_id" binding:"required"`
-	Url        string `json:"url" binding:"required"`
+	MovieID      int64  `json:"movie_id" binding:"required"`
+	Url          string `json:"url" binding:"required"`
 	PosterTypeID int64  `json:"poster_type_id" binding:"required"`
 }
 
@@ -153,6 +158,10 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		return
 	}
 	switch {
+	case input.Type == "areas":
+		data := models.Area{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, data)
 	case input.Type == "countries":
 		data := models.Country{Name: input.Name}
 		s.DB.Create(&data)
@@ -256,7 +265,7 @@ func (s *Service) FindAdv(c *gin.Context) {
 	values := gjson.Get(string(jsonData), "values")
 
 	dptr := s.DB.Table(t.String())
-	for i := 0; i < len(fields.Array()); i++{
+	for i := 0; i < len(fields.Array()); i++ {
 		dptr = dptr.Where(fmt.Sprintf("%s = ?", fields.Array()[i].String()), values.Array()[i].String())
 	}
 

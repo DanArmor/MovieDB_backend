@@ -54,12 +54,13 @@ func main() {
 	admin := r.Group("/admin")
 	admin.Use(service.ValidateAdmin)
 	admin.POST("/simple", service.CreateSimpleData)
+
 	admin.POST("/fees", service.CreateFees)
 	admin.POST("/movie_genres", service.CreateMovieGenreLink)
-	admin.POST("/movie", service.CreateMovie)
-	admin.POST("/person", service.CreatePerson)
-	admin.POST("/person_in_movie", service.CreatePersonInMovie)
-	admin.POST("/poster", service.CreatePoster)
+	admin.POST("/movies", service.CreateMovie)
+	admin.POST("/people", service.CreatePerson)
+	admin.POST("/person_in_movies", service.CreatePersonInMovie)
+	admin.POST("/posters", service.CreatePoster)
 
 	admin.GET("/find", service.FindSimple)
 	admin.GET("/findAll", service.FindSimpleAll)

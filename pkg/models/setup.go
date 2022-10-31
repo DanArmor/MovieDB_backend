@@ -19,6 +19,7 @@ func ConnectDatabase(sqlurl string) *gorm.DB {
 
 	database.AutoMigrate(&User{})
 
+	database.AutoMigrate(&Area{})
 	database.AutoMigrate(&Movie{})
 	database.AutoMigrate(&MovieType{})
 	database.AutoMigrate(&PosterType{})
