@@ -63,6 +63,7 @@ func main() {
 
 	admin.GET("/find", service.FindSimple)
 	admin.GET("/findAll", service.FindSimpleAll)
+	admin.GET("/findAdv", service.FindAdv)
 
 	// Запускаем сервер
 	r.Run(c.Port)

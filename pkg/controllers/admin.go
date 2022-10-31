@@ -2,7 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
@@ -176,6 +179,10 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		data := models.Profession{NameEn: input.Name}
 		s.DB.Create(&data)
 		c.JSON(http.StatusOK, data)
+	case input.Type == "poster_types":
+		data := models.PosterType{Name: input.Name}
+		s.DB.Create(&data)
+		c.JSON(http.StatusOK, data)
 	case input.Type == "statuses":
 		data := models.Status{Name: input.Name}
 		s.DB.Create(&data)
@@ -249,4 +256,25 @@ func (s *Service) FindSimpleAll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{t: result})
+}
+
+func (s *Service) FindAdv(c *gin.Context) {
+	result := map[string]interface{}{}
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	t := gjson.Get(string(jsonData), "type")
+	fields := gjson.Get(string(jsonData), "fieldNames")
+	values := gjson.Get(string(jsonData), "values")
+
+	dptr := s.DB.Table(t.String())
+	for i := 0; i < len(fields.Array()); i++{
+		dptr = dptr.Where(fmt.Sprintf("%s = ?", fields.Array()[i].String()), values.Array()[i].String())
+	}
+
+	err = dptr.Take(&result).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
 }
