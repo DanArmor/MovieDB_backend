@@ -75,7 +75,7 @@ func (s *Service) CreateMovie(c *gin.Context) {
 	// Create
 	movie := models.Movie{Name: input.Name, Description: input.Description,
 		Year: input.Year, StatusID: input.StatusID,
-		Duration: input.Duration, ProductionCompanyID: input.ProductionCompanyID,
+		Duration: input.Duration, 
 		Score: input.Score, Votes: input.Votes}
 	s.DB.Create(&movie)
 
@@ -170,10 +170,6 @@ func (s *Service) CreateSimpleData(c *gin.Context) {
 		c.JSON(http.StatusOK, data)
 	case input.Type == "movie_types":
 		data := models.MovieType{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
-	case input.Type == "production_companies":
-		data := models.ProductionCompany{Name: input.Name}
 		s.DB.Create(&data)
 		c.JSON(http.StatusOK, data)
 	case input.Type == "professions":
