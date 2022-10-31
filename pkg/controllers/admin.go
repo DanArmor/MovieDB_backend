@@ -11,12 +11,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CreateBudgetInput struct {
-	MovieID  int64  `json:"movie_id" binding:"required"`
-	Value    int64  `json:"value" binding:"required"`
-	Currency string `json:"currency" binding:"required"`
-}
-
 type CreateFeesInput struct {
 	MovieID  int64  `json:"movie_id" binding:"required"`
 	Value    int64  `json:"value" binding:"required"`
@@ -33,7 +27,7 @@ func (s *Service) CreateFees(c *gin.Context) {
 	area := models.Fees{MovieID: input.MovieID, Value: input.Value, Currency: input.Currency, Area: input.Area}
 	s.DB.Create(&area)
 
-	c.JSON(http.StatusOK, gin.H{"data": area})
+	c.JSON(http.StatusOK, area)
 }
 
 type CreateMovieGenreLinkInput struct {
@@ -50,7 +44,7 @@ func (s *Service) CreateMovieGenreLink(c *gin.Context) {
 	movieGenreLink := models.MovieGenres{MovieID: input.MovieID, GenreID: input.GenreID}
 	s.DB.Create(&movieGenreLink)
 
-	c.JSON(http.StatusOK, gin.H{"data": movieGenreLink})
+	c.JSON(http.StatusOK, movieGenreLink)
 }
 
 type CreateMovieInput struct {
@@ -60,7 +54,6 @@ type CreateMovieInput struct {
 	Year                int64   `json:"year" binding:"required"`
 	StatusID            int64   `json:"status_id" binding:"required"`
 	Duration            int64   `json:"duration" binding:"required"`
-	ProductionCompanyID int64   `json:"production_company_id" binding:"required"`
 	Score               float32 `json:"score" binding:"required"`
 	Votes               int64   `json:"votes" binding:"required"`
 	AgeRating           int64   `json:"age_rating" binding:"required"`
@@ -82,15 +75,12 @@ func (s *Service) CreateMovie(c *gin.Context) {
 		Score: input.Score, Votes: input.Votes}
 	s.DB.Create(&movie)
 
-	c.JSON(http.StatusOK, gin.H{"data": movie})
+	c.JSON(http.StatusOK, movie)
 }
 
 type CreatePersonInput struct {
-	MovieTypeID int64  `json:"movie_type_id" binding:"required"`
 	Name        string `json:"name" binding:"required"`
 	NameEn      string `json:"name_en" binding:"required"`
-	PhotoUrl    string `json:"photo_url" binding:"required"`
-	Description string `json:"description" binding:"required"`
 }
 
 func (s *Service) CreatePerson(c *gin.Context) {
@@ -100,10 +90,10 @@ func (s *Service) CreatePerson(c *gin.Context) {
 		return
 	}
 
-	person := models.Person{Name: input.Name, NameEn: input.NameEn, PhotoUrl: input.PhotoUrl, Description: input.Description}
+	person := models.Person{Name: input.Name, NameEn: input.NameEn}
 	s.DB.Create(&person)
 
-	c.JSON(http.StatusOK, gin.H{"data": person})
+	c.JSON(http.StatusOK, person)
 }
 
 type CreatePersonInMovieInput struct {
@@ -123,7 +113,7 @@ func (s *Service) CreatePersonInMovie(c *gin.Context) {
 	person := models.PersonInMovie{MovieID: input.MovieID, PersonID: input.PersonID, ProfessionID: input.ProfessionID, Description: input.Description}
 	s.DB.Create(&person)
 
-	c.JSON(http.StatusOK, gin.H{"data": person})
+	c.JSON(http.StatusOK, person)
 }
 
 type CreateRatingInput struct {
@@ -148,7 +138,7 @@ func (s *Service) CreatePoster(c *gin.Context) {
 	poster := models.Poster{Url: input.Url, MovieID: input.MovieID, PosterTypeID: input.PosterTypeID}
 	s.DB.Create(&poster)
 
-	c.JSON(http.StatusOK, gin.H{"data": poster})
+	c.JSON(http.StatusOK, poster)
 }
 
 type CreateSimpleInput struct {

@@ -1,29 +1,29 @@
 package models
 
 type Movie struct {
-	ID                  int64   `json:"id" gorm:"primary_key"`
-	ExternalID          int64   `json:"external_id"`
-	MovieTypeID         int64   `json:"movie_type_id"`
-	Name                string  `json:"name"`
-	Description         string  `json:"description"`
-	Year                int64   `json:"year"`
-	StatusID            int64   `json:"status_id"`
-	Duration            int64   `json:"duration"`
-	Score               float32 `json:"my_rate" gorm:"precision:1"`
-	Votes               int64   `json:"votes"`
-	AgeRating           int64   `json:"age_rating"`
-	Status              Status
-	MovieType           MovieType
+	ID          int64   `json:"id" gorm:"primary_key"`
+	ExternalID  int64   `json:"external_id"`
+	MovieTypeID int64   `json:"movie_type_id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Year        int64   `json:"year"`
+	StatusID    int64   `json:"status_id"`
+	Duration    int64   `json:"duration"`
+	Score       float32 `json:"my_rate" gorm:"precision:1"`
+	Votes       int64   `json:"votes"`
+	AgeRating   int64   `json:"age_rating"`
+	Status      Status
+	MovieType   MovieType
 }
 
 type MovieType struct {
 	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
+	Name string `json:"name" gorm:"unique"`
 }
 
 type PosterType struct {
 	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
+	Name string `json:"name" gorm:"unique"`
 }
 
 type Poster struct {
@@ -55,12 +55,12 @@ type Fees struct {
 
 type Status struct {
 	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
+	Name string `json:"name" gorm:"unique"`
 }
 
 type Genre struct {
 	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
+	Name string `json:"name" gorm:"unique"`
 }
 
 type MovieGenres struct {
@@ -73,20 +73,18 @@ type MovieGenres struct {
 
 type Country struct {
 	ID   int64  `json:"id" gorm:"primary_key"`
-	Name string `json:"name"`
+	Name string `json:"name" gorm:"unique"`
 }
 
 type Person struct {
-	ID          int64  `json:"id" gorm:"primary_key"`
-	Name        string `json:"name"`
-	NameEn      string `json:"name_en"`
-	PhotoUrl    string `json:"photo_url"`
-	Description string `json:"description"`
+	ID     int64  `json:"id" gorm:"primary_key"`
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
 }
 
 type Profession struct {
 	ID     int64  `json:"id" gorm:"primary_key"`
-	NameEn string `json:"name_en"`
+	NameEn string `json:"name_en" gorm:"unique"`
 }
 
 type PersonInMovie struct {
