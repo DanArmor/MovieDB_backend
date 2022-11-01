@@ -53,7 +53,7 @@ type CreateMovieInput struct {
 	Name            string  `json:"name" binding:"required"`
 	AlternativeName string  `json:"alternative_name" binding:"required"`
 	Description     string  `json:"description" binding:"required"`
-	Year            int64   `json:"year" binding:"required"`
+	Year            int64   `json:"year"`
 	StatusID        int64   `json:"status_id" binding:"required"`
 	Duration        int64   `json:"duration"`
 	Score           float32 `json:"score"`
