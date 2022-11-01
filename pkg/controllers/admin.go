@@ -56,7 +56,7 @@ type CreateMovieInput struct {
 	Year            int64   `json:"year" binding:"required"`
 	StatusID        int64   `json:"status_id" binding:"required"`
 	Duration        int64   `json:"duration"`
-	Score           float32 `json:"score" binding:"required"`
+	Score           float32 `json:"score"`
 	Votes           int64   `json:"votes" binding:"required"`
 	AgeRating       int64   `json:"age_rating"`
 	CountryID       int64   `json:"country_id" binding:"required"`
