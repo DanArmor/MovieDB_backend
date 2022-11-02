@@ -7,6 +7,7 @@ import (
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
+	"gorm.io/gorm"
 )
 
 type PostPersonalRatingInput struct {
@@ -16,11 +17,15 @@ type PostPersonalRatingInput struct {
 }
 
 func (s *Service) FindMovie(c *gin.Context) {
-	// was FindMovies
-	var movies []models.Movie
-	s.DB.Find(&movies)
+	var movie models.Movie
+	if err := s.DB.Where("id = ?", c.Param("id")).First(&movie).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"data": movies})
+	s.DB.First(&movie)
+
+	c.JSON(http.StatusOK, gin.H{"movie": movie})
 }
 
 //func (s *Service) GetMovieByID(id int64) { }
@@ -36,70 +41,49 @@ func (s *Service) FindMovies(c *gin.Context) {
 		return
 	}
 
-	//limit := gjson.Get(string(jsonData), "limit").Int()
-	//from := gjson.Get(string(jsonData), "from").Int()
-	//sort := gjson.Get(string(jsonData), "sort").Int()
+	sort := gjson.Get(string(jsonData), "sort").Int()
 	genres := gjson.Get(string(jsonData), "genres").Array()
 	genresIDs := []int64{}
 	for _, genreID := range genres {
 		genresIDs = append(genresIDs, genreID.Int())
 	}
-	subQuery := s.DB.Select("movie_id").Where("genre_id in ?", genresIDs).Group("movie_id").Having("COUNT(distinct genre_id) = ?", len(genresIDs)).Model(&models.MovieGenres{})
-	dptr := s.DB.Select("*").Joins("INNER JOIN (?) AS g ON g.movie_id = id", subQuery).Group("id, name")
+	var subQuery *gorm.DB
+	subQuery = nil
+	if len(genresIDs) != 0{
+		subQuery = s.DB.Select("movie_id").Where("genre_id in ?", genresIDs).Group("movie_id").Having("COUNT(distinct genre_id) = ?", len(genresIDs)).Model(&models.MovieGenres{})
+	}
+
+	limit := gjson.Get(string(jsonData), "limit").Int()
+	from := gjson.Get(string(jsonData), "from").Int()
+	var dptr *gorm.DB
+	if subQuery != nil {
+		dptr = s.DB.Limit(int(limit)).Offset(int(from)).Select("*").Joins("INNER JOIN (?) AS g ON g.movie_id = id", subQuery)
+	} else {
+		dptr = s.DB.Limit(int(limit)).Offset(int(from)).Select("*")
+	}
+
+	if gjson.Get(string(jsonData), "avgRateFrom").Exists(){
+		dptr = dptr.Where("score >= ?", gjson.Get(string(jsonData), "avgRateFrom").Int())
+	}
+	if gjson.Get(string(jsonData), "avgRateTo").Exists(){
+		dptr = dptr.Where("score <= ?", gjson.Get(string(jsonData), "avgRateTo").Int())
+	}
+	if gjson.Get(string(jsonData), "searchName").Exists(){
+		dptr = dptr.Where("name LIKE ?", "%" + gjson.Get(string(jsonData), "searchName").String() + "%")
+	}
+
+	dptr = dptr.Group("id, name")
+	if sort == 0{
+		dptr = dptr.Order("year")
+	} else {
+		dptr = dptr.Order("score")
+	}
+
 	err = dptr.Find(&movies).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if gjson.Get(string(jsonData), "avgRateFrom").Exists(){
-
-	}
-	if gjson.Get(string(jsonData), "avgRateTo").Exists(){
-
-	}
-	if gjson.Get(string(jsonData), "searchName").Exists(){
-
-	}
-
 	c.JSON(http.StatusOK, gin.H{"movies": movies})
-}
-
-type UpdateMovieInput struct {
-	Name string `json:"name"`
-}
-
-// PATCH /movies/:id
-// Update a movie
-func (s *Service) UpdateMovie(c *gin.Context) {
-	var movie models.Movie
-	if err := s.DB.Where("id = ?", c.Param("id")).First(&movie).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
-
-	// Validate
-	var input UpdateMovieInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	updateMovie := models.Movie{Name: input.Name}
-	s.DB.Model(&movie).Updates(updateMovie)
-
-	c.JSON(http.StatusOK, gin.H{"data": movie})
-}
-
-// DELETE /movies/:id
-// Delete a movie
-func (s *Service) DeleteMovie(c *gin.Context) {
-	var movie models.Movie
-	if err := s.DB.Where("id = ?", c.Param("id")).First(&movie).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
-
-	s.DB.Delete(&movie)
-
-	c.JSON(http.StatusOK, gin.H{"data": true})
 }

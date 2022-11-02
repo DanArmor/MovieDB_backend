@@ -10,7 +10,7 @@ type Movie struct {
 	Year            int64   `json:"year"`
 	StatusID        int64   `json:"status_id"`
 	Duration        int64   `json:"duration"`
-	Score           float32 `json:"score" gorm:"precision:1"`
+	Score           float32 `json:"score" gorm:"precision:3"`
 	Votes           int64   `json:"votes"`
 	AgeRating       int64   `json:"age_rating"`
 	CountryID       int64   `json:"country_id"`

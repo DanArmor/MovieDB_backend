@@ -43,11 +43,8 @@ func main() {
 	private := r.Group("/api")
 	private.Use(service.ValidateToken)
 	private.GET("/movies", service.FindMovies)
-	//private.GET("/movies/:id", service.FindMovie)
+	private.GET("/movies/:id", service.FindMovie)
 	private.Static("res/img", "res/img")
-	//private.POST("/movies", service.CreateMovie)
-	//private.PATCH("/movies/:id", service.UpdateMovie)
-	//private.DELETE("/movies/:id", service.DeleteMovie)
 
 	public := r.Group("/auth")
 	public.POST("/login", service.LoginUser)
@@ -62,6 +59,8 @@ func main() {
 	admin.POST("/people", service.CreatePerson)
 	admin.POST("/person_in_movies", service.CreatePersonInMovie)
 	admin.POST("/posters", service.CreatePoster)
+
+	admin.PATCH("/updateMovie", service.UpdateMovie)
 
 	admin.GET("/find", service.FindSimple)
 	admin.GET("/findAll", service.FindSimpleAll)

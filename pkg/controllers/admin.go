@@ -62,6 +62,50 @@ type CreateMovieInput struct {
 	CountryID       int64   `json:"country_id" binding:"required"`
 }
 
+type UpdateMovieInput struct {
+	ExternalID      int64   `json:"external_id"`
+	MovieTypeID     int64   `json:"movie_type_id"`
+	Name            string  `json:"name"`
+	AlternativeName string  `json:"alternative_name"`
+	Description     string  `json:"description"`
+	Year            int64   `json:"year"`
+	StatusID        int64   `json:"status_id"`
+	Duration        int64   `json:"duration"`
+	Score           float32 `json:"score"`
+	Votes           int64   `json:"votes"`
+	AgeRating       int64   `json:"age_rating"`
+	CountryID       int64   `json:"country_id"`
+}
+// PATCH /movies/:id
+// Update a movie
+func (s *Service) UpdateMovie(c *gin.Context) {
+	var movie models.Movie
+	if err := s.DB.Where("external_id = ?", c.Query("external_id")).First(&movie).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+		return
+	}
+
+	// Validate
+	var input UpdateMovieInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	updateMovie := models.Movie{Name: input.Name, Description: input.Description,
+		Year: input.Year, StatusID: input.StatusID,
+		Duration: input.Duration,
+		Score:    input.Score, Votes: input.Votes,
+		ExternalID: input.ExternalID, AlternativeName: input.AlternativeName,
+		CountryID: input.CountryID, MovieTypeID: input.MovieTypeID,
+		AgeRating: input.AgeRating}
+	if err := s.DB.Model(&movie).Updates(&updateMovie).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, movie)
+}
+
 // POST /movies
 func (s *Service) CreateMovie(c *gin.Context) {
 	// Validate
