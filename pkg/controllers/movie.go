@@ -187,7 +187,7 @@ func (self *Service) FindMovies(context *gin.Context) {
 	dptr = dptr.Group("id, name")
 	if sort == SORT_YEAR {
 		dptr = dptr.Order("year")
-	} else if sort == SORT_SCORE{
+	} else if sort == SORT_SCORE {
 		dptr = dptr.Order("score")
 	} else {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Wrong sort enum"})
@@ -243,7 +243,7 @@ func (self *Service) UpdatePersonalScore(context *gin.Context) {
 	user_id := self.GetUserID(context)
 	var rating models.PersonalRating
 	if err := self.DB.Where("movie_id = ?", movie_id).Where("user_id = ?", user_id).First(&rating).Error; err != nil {
-		rating = models.PersonalRating{MovieID:  movie_id, UserID: user_id, Score: score}
+		rating = models.PersonalRating{MovieID: movie_id, UserID: user_id, Score: score}
 		self.DB.Create(&rating)
 	} else {
 		rating.Score = score

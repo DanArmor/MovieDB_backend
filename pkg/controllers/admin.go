@@ -18,16 +18,16 @@ type CreateFeesInput struct {
 	AreaID   int64  `json:"area_id" binding:"required"`
 }
 
-func (s *Service) CreateFees(c *gin.Context) {
+func (self *Service) CreateFees(context *gin.Context) {
 	var input CreateFeesInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	area := models.Fees{MovieID: input.MovieID, Value: input.Value, Currency: input.Currency, AreaID: input.AreaID}
-	s.DB.Create(&area)
+	self.DB.Create(&area)
 
-	c.JSON(http.StatusOK, area)
+	context.JSON(http.StatusOK, area)
 }
 
 type CreateMovieGenreLinkInput struct {
@@ -35,16 +35,16 @@ type CreateMovieGenreLinkInput struct {
 	GenreID int64 `json:"genre_id" binding:"required"`
 }
 
-func (s *Service) CreateMovieGenreLink(c *gin.Context) {
+func (self *Service) CreateMovieGenreLink(context *gin.Context) {
 	var input CreateMovieGenreLinkInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	movieGenreLink := models.MovieGenres{MovieID: input.MovieID, GenreID: input.GenreID}
-	s.DB.Create(&movieGenreLink)
+	self.DB.Create(&movieGenreLink)
 
-	c.JSON(http.StatusOK, movieGenreLink)
+	context.JSON(http.StatusOK, movieGenreLink)
 }
 
 type CreateMovieInput struct {
@@ -76,19 +76,20 @@ type UpdateMovieInput struct {
 	AgeRating       int64   `json:"age_rating"`
 	CountryID       int64   `json:"country_id"`
 }
+
 // PATCH /movies/:id
 // Update a movie
-func (s *Service) UpdateMovie(c *gin.Context) {
+func (self *Service) UpdateMovie(context *gin.Context) {
 	var movie models.Movie
-	if err := s.DB.Where("external_id = ?", c.Query("external_id")).First(&movie).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+	if err := self.DB.Where("external_id = ?", context.Query("external_id")).First(&movie).Error; err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
 	}
 
 	// Validate
 	var input UpdateMovieInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	updateMovie := models.Movie{Name: input.Name, Description: input.Description,
@@ -98,19 +99,19 @@ func (s *Service) UpdateMovie(c *gin.Context) {
 		ExternalID: input.ExternalID, AlternativeName: input.AlternativeName,
 		CountryID: input.CountryID, MovieTypeID: input.MovieTypeID,
 		AgeRating: input.AgeRating}
-	if err := s.DB.Model(&movie).Updates(updateMovie).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := self.DB.Model(&movie).Updates(updateMovie).Error; err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, movie)
+	context.JSON(http.StatusOK, movie)
 }
 
 // POST /movies
-func (s *Service) CreateMovie(c *gin.Context) {
+func (self *Service) CreateMovie(context *gin.Context) {
 	// Validate
 	var input CreateMovieInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -122,9 +123,9 @@ func (s *Service) CreateMovie(c *gin.Context) {
 		ExternalID: input.ExternalID, AlternativeName: input.AlternativeName,
 		CountryID: input.CountryID, MovieTypeID: input.MovieTypeID,
 		AgeRating: input.AgeRating}
-	s.DB.Create(&movie)
+	self.DB.Create(&movie)
 
-	c.JSON(http.StatusOK, movie)
+	context.JSON(http.StatusOK, movie)
 }
 
 type CreatePersonInput struct {
@@ -132,17 +133,17 @@ type CreatePersonInput struct {
 	NameEn string `json:"name_en"`
 }
 
-func (s *Service) CreatePerson(c *gin.Context) {
+func (self *Service) CreatePerson(context *gin.Context) {
 	var input CreatePersonInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	person := models.Person{Name: input.Name, NameEn: input.NameEn}
-	s.DB.Create(&person)
+	self.DB.Create(&person)
 
-	c.JSON(http.StatusOK, person)
+	context.JSON(http.StatusOK, person)
 }
 
 type CreatePersonInMovieInput struct {
@@ -151,17 +152,17 @@ type CreatePersonInMovieInput struct {
 	ProfessionID int64 `json:"profession_id" binding:"required"`
 }
 
-func (s *Service) CreatePersonInMovie(c *gin.Context) {
+func (self *Service) CreatePersonInMovie(context *gin.Context) {
 	var input CreatePersonInMovieInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	person := models.PersonInMovie{MovieID: input.MovieID, PersonID: input.PersonID, ProfessionID: input.ProfessionID}
-	s.DB.Create(&person)
+	self.DB.Create(&person)
 
-	c.JSON(http.StatusOK, person)
+	context.JSON(http.StatusOK, person)
 }
 
 type CreateRatingInput struct {
@@ -176,17 +177,17 @@ type CreatePosterInput struct {
 	PosterTypeID int64  `json:"poster_type_id" binding:"required"`
 }
 
-func (s *Service) CreatePoster(c *gin.Context) {
+func (self *Service) CreatePoster(context *gin.Context) {
 	var input CreatePosterInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	poster := models.Poster{Url: input.Url, MovieID: input.MovieID, PosterTypeID: input.PosterTypeID}
-	s.DB.Create(&poster)
+	self.DB.Create(&poster)
 
-	c.JSON(http.StatusOK, poster)
+	context.JSON(http.StatusOK, poster)
 }
 
 type CreateSimpleInput struct {
@@ -194,129 +195,129 @@ type CreateSimpleInput struct {
 	Name string `json:"name" binding:"required"`
 }
 
-func (s *Service) CreateSimpleData(c *gin.Context) {
+func (self *Service) CreateSimpleData(context *gin.Context) {
 	var input CreateSimpleInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := context.ShouldBindJSON(&input); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	switch {
 	case input.Type == "areas":
 		data := models.Area{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	case input.Type == "countries":
 		data := models.Country{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	case input.Type == "genres":
 		data := models.Genre{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	case input.Type == "movie_types":
 		data := models.MovieType{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	case input.Type == "professions":
 		data := models.Profession{NameEn: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	case input.Type == "poster_types":
 		data := models.PosterType{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	case input.Type == "statuses":
 		data := models.Status{Name: input.Name}
-		s.DB.Create(&data)
-		c.JSON(http.StatusOK, data)
+		self.DB.Create(&data)
+		context.JSON(http.StatusOK, data)
 	}
 }
 
-func (s *Service) FindSimple(c *gin.Context) {
+func (self *Service) FindSimple(context *gin.Context) {
 	result := map[string]interface{}{}
 	var err error
 	err = nil
 
-	if _, has := c.GetQuery("type"); has == false {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No type to find"})
+	if _, has := context.GetQuery("type"); has == false {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "No type to find"})
 		return
 	}
-	if _, has := c.GetQuery("field"); has == false {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No field to find"})
+	if _, has := context.GetQuery("field"); has == false {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "No field to find"})
 		return
 	}
-	if _, has := c.GetQuery("value"); has == false {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No value to find"})
+	if _, has := context.GetQuery("value"); has == false {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "No value to find"})
 		return
 	}
 
-	t := c.Query("type")
-	field := c.Query("field")
-	value := c.Query("value")
-	err = s.DB.Table(t).Take(&result, fmt.Sprintf("%s = ?", field), value).Error
+	t := context.Query("type")
+	field := context.Query("field")
+	value := context.Query("value")
+	err = self.DB.Table(t).Take(&result, fmt.Sprintf("%s = ?", field), value).Error
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	context.JSON(http.StatusOK, result)
 }
 
-func (s *Service) FindSimpleAll(c *gin.Context) {
+func (self *Service) FindSimpleAll(context *gin.Context) {
 	result := []map[string]interface{}{}
 	var err error
 	err = nil
 	var hasField bool
 
-	if _, has := c.GetQuery("type"); has == false {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No type to find"})
+	if _, has := context.GetQuery("type"); has == false {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "No type to find"})
 		return
 	}
-	if _, has := c.GetQuery("field"); has == false {
+	if _, has := context.GetQuery("field"); has == false {
 		hasField = has
 	}
 	if hasField {
-		if _, has := c.GetQuery("value"); has == false {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No value to find"})
+		if _, has := context.GetQuery("value"); has == false {
+			context.JSON(http.StatusBadRequest, gin.H{"error": "No value to find"})
 			return
 		}
 	}
 
-	t := c.Query("type")
+	t := context.Query("type")
 	if hasField {
-		field := c.Query("field")
-		value := c.Query("value")
-		err = s.DB.Table(t).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
+		field := context.Query("field")
+		value := context.Query("value")
+		err = self.DB.Table(t).Find(&result, fmt.Sprintf("%s = ?", field), value).Error
 	} else {
-		err = s.DB.Table(t).Find(&result).Error
+		err = self.DB.Table(t).Find(&result).Error
 	}
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{t: result})
+	context.JSON(http.StatusOK, gin.H{t: result})
 }
 
-func (s *Service) FindAdv(c *gin.Context) {
+func (self *Service) FindAdv(context *gin.Context) {
 	result := map[string]interface{}{}
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	jsonData, err := ioutil.ReadAll(context.Request.Body)
 	t := gjson.Get(string(jsonData), "type")
 	fields := gjson.Get(string(jsonData), "fieldNames")
 	values := gjson.Get(string(jsonData), "values")
 
-	dptr := s.DB.Table(t.String())
+	dptr := self.DB.Table(t.String())
 	for i := 0; i < len(fields.Array()); i++ {
 		dptr = dptr.Where(fmt.Sprintf("%s = ?", fields.Array()[i].String()), values.Array()[i].String())
 	}
 
 	err = dptr.Take(&result).Error
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found! " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	context.JSON(http.StatusOK, result)
 }
