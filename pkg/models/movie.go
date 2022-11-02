@@ -1,22 +1,22 @@
 package models
 
 type Movie struct {
-	ID              int64   `json:"id" gorm:"primary_key"`
-	ExternalID      int64   `json:"external_id"`
-	MovieTypeID     int64   `json:"movie_type_id"`
-	Name            string  `json:"name"`
-	AlternativeName string  `json:"alternative_name"`
-	Description     string  `json:"description"`
-	Year            int64   `json:"year"`
-	StatusID        int64   `json:"status_id"`
-	Duration        int64   `json:"duration"`
-	Score           float32 `json:"score" gorm:"precision:3"`
-	Votes           int64   `json:"votes"`
-	AgeRating       int64   `json:"age_rating"`
-	CountryID       int64   `json:"country_id"`
-	Status          Status
-	MovieType       MovieType
-	Country         Country
+	ID              int64     `json:"id" gorm:"primary_key"`
+	ExternalID      int64     `json:"external_id"`
+	MovieTypeID     int64     `json:"movie_type_id"`
+	Name            string    `json:"name"`
+	AlternativeName string    `json:"alternative_name"`
+	Description     string    `json:"description"`
+	Year            int64     `json:"year"`
+	StatusID        int64     `json:"status_id"`
+	Duration        int64     `json:"duration"`
+	Score           float32   `json:"score" gorm:"precision:3"`
+	Votes           int64     `json:"votes"`
+	AgeRating       int64     `json:"age_rating"`
+	CountryID       int64     `json:"country_id"`
+	Status          Status    `json:"-"`
+	MovieType       MovieType `json:"-"`
+	Country         Country   `json:"-"`
 }
 
 type MovieType struct {
@@ -30,12 +30,12 @@ type PosterType struct {
 }
 
 type Poster struct {
-	ID           int64  `json:"id" gorm:"primary_key"`
-	Url          string `json:"url"`
-	MovieID      int64  `json:"movie_id"`
-	PosterTypeID int64  `json:"poster_type_id"`
-	Movie        Movie
-	PosterType   PosterType
+	ID           int64      `json:"id" gorm:"primary_key"`
+	Url          string     `json:"url"`
+	MovieID      int64      `json:"movie_id"`
+	PosterTypeID int64      `json:"poster_type_id"`
+	Movie        Movie      `json:"-"`
+	PosterType   PosterType `json:"-"`
 }
 
 type PersonalRating struct {
@@ -43,8 +43,8 @@ type PersonalRating struct {
 	MovieID int64 `json:"movie_id"`
 	UserID  int64 `json:"user_id"`
 	Score   int64 `json:"score"`
-	User    User
-	Movie   Movie
+	User    User  `json:"-"`
+	Movie   Movie `json:"-"`
 }
 
 type Area struct {
@@ -58,8 +58,8 @@ type Fees struct {
 	Value    int64  `json:"value"`
 	Currency string `json:"currency"`
 	AreaID   int64  `json:"area_id"`
-	Movie    Movie
-	Area     Area
+	Movie    Movie  `json:"-"`
+	Area     Area   `json:"-"`
 }
 
 type Status struct {
@@ -76,8 +76,8 @@ type MovieGenres struct {
 	ID      int64 `json:"id" gorm:"primary_key"`
 	GenreID int64 `json:"genre_id"`
 	MovieID int64 `json:"movie_id"`
-	Genre   Genre
-	Movie   Movie
+	Genre   Genre `json:"-"`
+	Movie   Movie `json:"-"`
 }
 
 type Country struct {
@@ -97,11 +97,11 @@ type Profession struct {
 }
 
 type PersonInMovie struct {
-	ID           int64 `json:"id" gorm:"primary_key"`
-	MovieID      int64 `json:"movie_id"`
-	PersonID     int64 `json:"person_id"`
-	ProfessionID int64 `json:"profession_id"`
-	Person       Person
-	Profession   Profession
-	Movie        Movie
+	ID           int64      `json:"id" gorm:"primary_key"`
+	MovieID      int64      `json:"movie_id"`
+	PersonID     int64      `json:"person_id"`
+	ProfessionID int64      `json:"profession_id"`
+	Person       Person     `json:"-"`
+	Profession   Profession `json:"-"`
+	Movie        Movie      `json:"-"`
 }

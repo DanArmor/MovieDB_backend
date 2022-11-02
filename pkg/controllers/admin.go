@@ -98,11 +98,10 @@ func (s *Service) UpdateMovie(c *gin.Context) {
 		ExternalID: input.ExternalID, AlternativeName: input.AlternativeName,
 		CountryID: input.CountryID, MovieTypeID: input.MovieTypeID,
 		AgeRating: input.AgeRating}
-	if err := s.DB.Model(&movie).Updates(&updateMovie).Error; err != nil {
+	if err := s.DB.Model(&movie).Updates(updateMovie).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, movie)
 }
 
