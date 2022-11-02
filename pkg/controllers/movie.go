@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"io/ioutil"
 	"net/http"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
+	"github.com/tidwall/gjson"
 )
 
 type PostPersonalRatingInput struct {
@@ -13,24 +15,54 @@ type PostPersonalRatingInput struct {
 	Score   int64 `json:"score" binding:"require"`
 }
 
-func (s *Service) FindMovies(c *gin.Context) {
+func (s *Service) FindMovie(c *gin.Context) {
+	// was FindMovies
 	var movies []models.Movie
 	s.DB.Find(&movies)
 
 	c.JSON(http.StatusOK, gin.H{"data": movies})
 }
 
+//func (s *Service) GetMovieByID(id int64) { }
+
 // GET /movies
 // Find a movie
-func (s *Service) FindMovie(c *gin.Context) {
-	var movie models.Movie
+func (s *Service) FindMovies(c *gin.Context) {
+	var movies []models.Movie
 
-	if err := s.DB.Where("id = ?", c.Param("id")).First(&movie).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": movie})
+	//limit := gjson.Get(string(jsonData), "limit").Int()
+	//from := gjson.Get(string(jsonData), "from").Int()
+	//sort := gjson.Get(string(jsonData), "sort").Int()
+	genres := gjson.Get(string(jsonData), "genres").Array()
+	genresIDs := []int64{}
+	for _, genreID := range genres {
+		genresIDs = append(genresIDs, genreID.Int())
+	}
+	subQuery := s.DB.Select("movie_id").Where("genre_id in ?", genresIDs).Group("movie_id").Having("COUNT(distinct genre_id) = ?", len(genresIDs)).Model(&models.MovieGenres{})
+	dptr := s.DB.Select("*").Joins("INNER JOIN (?) AS g ON g.movie_id = id", subQuery).Group("id, name")
+	err = dptr.Find(&movies).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if gjson.Get(string(jsonData), "avgRateFrom").Exists(){
+
+	}
+	if gjson.Get(string(jsonData), "avgRateTo").Exists(){
+
+	}
+	if gjson.Get(string(jsonData), "searchName").Exists(){
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{"movies": movies})
 }
 
 type UpdateMovieInput struct {
