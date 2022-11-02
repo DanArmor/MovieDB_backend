@@ -11,6 +11,9 @@ import (
 	"gorm.io/gorm"
 )
 
+const SORT_YEAR = 0
+const SORT_SCORE = 1
+
 type PostPersonalRatingInput struct {
 	MovieID int64 `json:"movie_id" binding:"required"`
 	UserID  int64 `json:"user_id" binding:"require"`
@@ -37,6 +40,11 @@ type PersonLong struct {
 	ProfessionName string `json:"profession"`
 }
 
+type FeesLong struct {
+	models.Fees
+	AreaName string `json:"area_name"`
+}
+
 type MovieInfoLong struct {
 	MovieInfoShort
 	Description string        `json:"description"`
@@ -48,11 +56,6 @@ type MovieInfoLong struct {
 	Backdrop    models.Poster `json:"backdrop"`
 }
 
-type FeesLong struct {
-	models.Fees
-	AreaName string `json:"area_name"`
-}
-
 func MovieToShort(movie models.Movie) MovieInfoShort {
 	return MovieInfoShort{
 		ID: movie.ID, ExternalID: movie.ExternalID,
@@ -62,47 +65,52 @@ func MovieToShort(movie models.Movie) MovieInfoShort {
 	}
 }
 
-func (s *Service) GetUserID(c *gin.Context) int64 {
-	token := c.Request.Header.Get("token")
-	claims, err := s.Jwt.ValidateToken(token)
+func (self *Service) GetUserID(context *gin.Context) int64 {
+	token := context.Request.Header.Get("token")
+	claims, err := self.Jwt.ValidateToken(token)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		return -1
 	}
 	var user models.User
-	if result := s.DB.Where(&models.User{Email: claims.Email}).First(&user); result.Error != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found!"})
+	if result := self.DB.Where(&models.User{Email: claims.Email}).First(&user); result.Error != nil {
+		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found!"})
 		return -1
 	}
 	return user.Id
 }
 
-func (s *Service) GetMovieShortInfo(movie models.Movie, user_id int64) MovieInfoShort {
-	id := movie.ID
+func (self *Service) GetMovieShortInfo(movie models.Movie, user_id int64) (MovieInfoShort, error) {
 	info := MovieToShort(movie)
 
-	s.DB.Where("movie_id = ?", id).Where("poster_type_id = ?", s.PreviewID).First(&info.Preview)
-
-	var mg []models.MovieGenres
-	s.DB.Where("movie_id = ?", id).Find(&mg)
-	for _, mg_link := range mg {
-		info.Genres = append(info.Genres, models.Genre{ID: mg_link.GenreID, Name: s.MapGenre[mg_link.GenreID]})
+	if err := self.DB.Where("movie_id = ?", movie.ID).Where("poster_type_id = ?", self.PreviewID).First(&info.Preview).Error; err != nil {
+		return MovieInfoShort{}, err
 	}
 
-	s.DB.Where("movie_id = ?", id).Where("user_id = ?", user_id).First(&info.PersonalRating)
+	var mg []models.MovieGenres
+	self.DB.Where("movie_id = ?", movie.ID).Find(&mg)
+	for _, mg_link := range mg {
+		info.Genres = append(info.Genres, models.Genre{ID: mg_link.GenreID, Name: self.MapGenre[mg_link.GenreID]})
+	}
 
-	info.Country = models.Country{ID: movie.CountryID, Name: s.MapCountry[movie.CountryID]}
-	info.MovieType = models.MovieType{ID: movie.MovieTypeID, Name: s.MapType[movie.MovieTypeID]}
+	self.DB.Where("movie_id = ?", movie.ID).Where("user_id = ?", user_id).First(&info.PersonalRating)
 
-	return info
+	info.Country = models.Country{ID: movie.CountryID, Name: self.MapCountry[movie.CountryID]}
+	info.MovieType = models.MovieType{ID: movie.MovieTypeID, Name: self.MapType[movie.MovieTypeID]}
+
+	return info, nil
 }
 
-func (s *Service) GetMovieLongInfo(movie models.Movie, user_id int64) MovieInfoLong {
-	id := movie.ID
-	info := MovieInfoLong{MovieInfoShort: s.GetMovieShortInfo(movie, user_id)}
+func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64) (MovieInfoLong, error) {
+	shortInfo, err := self.GetMovieShortInfo(movie, user_id)
+	if err != nil {
+		return MovieInfoLong{}, err
+	}
+
+	info := MovieInfoLong{MovieInfoShort: shortInfo}
 
 	var poster models.Poster
-	if err := s.DB.Where("movie_id = ?", id).Where("poster_type_id = ?", s.BackdropID).First(&poster).Error; err != nil {
+	if err := self.DB.Where("movie_id = ?", movie.ID).Where("poster_type_id = ?", self.BackdropID).First(&poster).Error; err != nil {
 		info.Backdrop = info.Preview
 	} else {
 		info.Backdrop = poster
@@ -110,44 +118,43 @@ func (s *Service) GetMovieLongInfo(movie models.Movie, user_id int64) MovieInfoL
 
 	info.Description = movie.Description
 	info.Duration = movie.Duration
-	info.Status = models.Status{ID: movie.StatusID, Name: s.MapStatus[movie.StatusID]}
+	info.Status = models.Status{ID: movie.StatusID, Name: self.MapStatus[movie.StatusID]}
 	info.AgeRating = movie.AgeRating
 
 	var fees []models.Fees
-	s.DB.Where("movie_id = ?", id).Find(&fees)
+	self.DB.Where("movie_id = ?", movie.ID).Find(&fees)
 	for _, fee := range fees {
-		info.Fees = append(info.Fees, FeesLong{fee, s.MapArea[fee.AreaID]})
+		info.Fees = append(info.Fees, FeesLong{fee, self.MapArea[fee.AreaID]})
 	}
 
 	var pims []models.PersonInMovie
-	if err := s.DB.Where("movie_id = ?", id).Find(&pims).Error; err != nil {
-		return MovieInfoLong{}
+	if err := self.DB.Where("movie_id = ?", movie.ID).Find(&pims).Error; err != nil {
+		return MovieInfoLong{}, err
 	}
 	for _, pim := range pims {
 		var person models.Person
-		if err := s.DB.Where("id = ?", pim.PersonID).First(&person).Error; err != nil {
-			return MovieInfoLong{}
+		if err := self.DB.Where("id = ?", pim.PersonID).First(&person).Error; err != nil {
+			return MovieInfoLong{}, err
 		}
-		personLong := PersonLong{person, s.MapProfs[pim.ProfessionID]}
+		personLong := PersonLong{person, self.MapProfs[pim.ProfessionID]}
 		info.Persons = append(info.Persons, personLong)
 	}
 
-	return info
+	return info, nil
 }
 
 // GET /movies
 // Find a movie
-func (s *Service) FindMovies(c *gin.Context) {
-	var movies []models.Movie
-
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+func (self *Service) FindMovies(context *gin.Context) {
+	jsonBytes, err := ioutil.ReadAll(context.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
 		return
 	}
+	jsonStr := string(jsonBytes)
 
-	sort := gjson.Get(string(jsonData), "sort").Int()
-	genres := gjson.Get(string(jsonData), "genres").Array()
+	sort := gjson.Get(jsonStr, "sort").Int()
+	genres := gjson.Get(jsonStr, "genres").Array()
 	genresIDs := []int64{}
 	for _, genreID := range genres {
 		genresIDs = append(genresIDs, genreID.Int())
@@ -155,93 +162,93 @@ func (s *Service) FindMovies(c *gin.Context) {
 	var subQuery *gorm.DB
 	subQuery = nil
 	if len(genresIDs) != 0 {
-		subQuery = s.DB.Select("movie_id").Where("genre_id in ?", genresIDs).Group("movie_id").Having("COUNT(distinct genre_id) = ?", len(genresIDs)).Model(&models.MovieGenres{})
+		subQuery = self.DB.Select("movie_id").Where("genre_id in ?", genresIDs).Group("movie_id").Having("COUNT(distinct genre_id) = ?", len(genresIDs)).Model(&models.MovieGenres{})
 	}
 
-	limit := gjson.Get(string(jsonData), "limit").Int()
-	from := gjson.Get(string(jsonData), "from").Int()
+	limit := gjson.Get(jsonStr, "limit").Int()
+	from := gjson.Get(jsonStr, "from").Int()
 	var dptr *gorm.DB
 	if subQuery != nil {
-		dptr = s.DB.Limit(int(limit)).Offset(int(from)).Select("*").Joins("INNER JOIN (?) AS g ON g.movie_id = id", subQuery)
+		dptr = self.DB.Limit(int(limit)).Offset(int(from)).Select("*").Joins("INNER JOIN (?) AS g ON g.movie_id = id", subQuery)
 	} else {
-		dptr = s.DB.Limit(int(limit)).Offset(int(from)).Select("*")
+		dptr = self.DB.Limit(int(limit)).Offset(int(from)).Select("*")
 	}
 
-	if gjson.Get(string(jsonData), "avgRateFrom").Exists() {
-		dptr = dptr.Where("score >= ?", gjson.Get(string(jsonData), "avgRateFrom").Int())
+	if gjson.Get(string(jsonStr), "avgRateFrom").Exists() {
+		dptr = dptr.Where("score >= ?", gjson.Get(jsonStr, "avgRateFrom").Int())
 	}
-	if gjson.Get(string(jsonData), "avgRateTo").Exists() {
-		dptr = dptr.Where("score <= ?", gjson.Get(string(jsonData), "avgRateTo").Int())
+	if gjson.Get(string(jsonStr), "avgRateTo").Exists() {
+		dptr = dptr.Where("score <= ?", gjson.Get(jsonStr, "avgRateTo").Int())
 	}
-	if gjson.Get(string(jsonData), "searchName").Exists() {
-		dptr = dptr.Where("name LIKE ?", "%"+gjson.Get(string(jsonData), "searchName").String()+"%")
+	if gjson.Get(string(jsonStr), "searchName").Exists() {
+		dptr = dptr.Where("name LIKE ?", "%"+gjson.Get(jsonStr, "searchName").String()+"%")
 	}
 
 	dptr = dptr.Group("id, name")
-	if sort == 0 {
+	if sort == SORT_YEAR {
 		dptr = dptr.Order("year")
-	} else {
+	} else if sort == SORT_SCORE{
 		dptr = dptr.Order("score")
+	} else {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Wrong sort enum"})
+		return
 	}
 
+	var movies []models.Movie
 	err = dptr.Find(&movies).Error
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user_id := s.GetUserID(c)
+	user_id := self.GetUserID(context)
 	var moviesShorts []MovieInfoShort
 	for _, movie := range movies {
-		moviesShorts = append(moviesShorts, s.GetMovieShortInfo(movie, user_id))
+		shortInfo, err := self.GetMovieShortInfo(movie, user_id)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		moviesShorts = append(moviesShorts, shortInfo)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"movies": moviesShorts})
+	context.JSON(http.StatusOK, gin.H{"movies": moviesShorts})
 }
 
-func (s *Service) FindMovie(c *gin.Context) {
+func (self *Service) FindMovie(context *gin.Context) {
 	var movie models.Movie
-	if err := s.DB.Where("id = ?", c.Param("id")).First(&movie).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+	if err := self.DB.Where("id = ?", context.Param("id")).First(&movie).Error; err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
 	}
 
-	// user id
-	token := c.Request.Header.Get("token")
-	claims, err := s.Jwt.ValidateToken(token)
+	movieLong, err := self.GetMovieLongInfo(movie, self.GetUserID(context))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
-	}
-	var user models.User
-	if result := s.DB.Where(&models.User{Email: claims.Email}).First(&user); result.Error != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found!"})
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	movieLong := s.GetMovieLongInfo(movie, user.Id)
-
-	c.JSON(http.StatusOK, gin.H{"movie": movieLong})
+	context.JSON(http.StatusOK, gin.H{"movie": movieLong})
 }
 
-func (s *Service) UpdatePersonalScore(c *gin.Context) {
-	jsonData, err := ioutil.ReadAll(c.Request.Body)
+func (self *Service) UpdatePersonalScore(context *gin.Context) {
+	jsonData, err := ioutil.ReadAll(context.Request.Body)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
 		return
 	}
 
 	score := gjson.Get(string(jsonData), "score").Int()
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	user_id := s.GetUserID(c)
+	movie_id, _ := strconv.ParseInt(context.Param("id"), 10, 64)
+	user_id := self.GetUserID(context)
 	var rating models.PersonalRating
-	if err := s.DB.Where("movie_id = ?", id).Where("user_id = ?", user_id).First(&rating).Error; err != nil {
-		rating = models.PersonalRating{MovieID:  id, UserID: user_id, Score: score}
-		s.DB.Create(&rating)
+	if err := self.DB.Where("movie_id = ?", movie_id).Where("user_id = ?", user_id).First(&rating).Error; err != nil {
+		rating = models.PersonalRating{MovieID:  movie_id, UserID: user_id, Score: score}
+		self.DB.Create(&rating)
 	} else {
 		rating.Score = score
-		s.DB.Updates(&rating)
+		self.DB.Updates(&rating)
 	}
 
-	c.JSON(http.StatusOK, rating)
+	context.JSON(http.StatusOK, rating)
 }
