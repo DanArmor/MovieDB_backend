@@ -117,6 +117,7 @@ func main() {
 	private.Use(service.ValidateToken)
 	private.GET("/movies", service.FindMovies)
 	private.GET("/movies/:id", service.FindMovie)
+	private.POST("/rating/:id", service.UpdatePersonalScore)
 	private.Static("res/img", "res/img")
 
 	public := r.Group("/auth")

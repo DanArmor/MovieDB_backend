@@ -3,6 +3,7 @@ package controllers
 import (
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/gin-gonic/gin"
@@ -221,4 +222,26 @@ func (s *Service) FindMovie(c *gin.Context) {
 	movieLong := s.GetMovieLongInfo(movie, user.Id)
 
 	c.JSON(http.StatusOK, gin.H{"movie": movieLong})
+}
+
+func (s *Service) UpdatePersonalScore(c *gin.Context) {
+	jsonData, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
+		return
+	}
+
+	score := gjson.Get(string(jsonData), "score").Int()
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	user_id := s.GetUserID(c)
+	var rating models.PersonalRating
+	if err := s.DB.Where("movie_id = ?", id).Where("user_id = ?", user_id).First(&rating).Error; err != nil {
+		rating = models.PersonalRating{MovieID:  id, UserID: user_id, Score: score}
+		s.DB.Create(&rating)
+	} else {
+		rating.Score = score
+		s.DB.Updates(&rating)
+	}
+
+	c.JSON(http.StatusOK, rating)
 }
