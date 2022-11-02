@@ -32,9 +32,7 @@ func (self *JwtWrapper) GenerateToken(user models.User) (signedToken string, err
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	signedToken, err = token.SignedString([]byte(self.SecretKey))
-
-	if err != nil {
+	if signedToken, err = token.SignedString([]byte(self.SecretKey)); err != nil{
 		return "", err
 	}
 

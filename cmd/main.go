@@ -4,7 +4,6 @@ import (
 	//"net/http"
 
 	"log"
-	"os"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/config"
 	"github.com/DanArmor/MovieDB_backend/pkg/controllers"
@@ -83,21 +82,18 @@ func SetupDataCache(s *controllers.Service) {
 
 func main() {
 	// Логер
-	infoLog := log.New(os.Stderr, "\033[32mINFO\033[0m\t", log.Ldate|log.Ltime)
 	// Грузим конфигурацию
-	c, err := config.LoadConfig()
-	c.AdminPass = utils.HashPassword(c.AdminPass)
+	config, err := config.LoadConfig()
 
 	if err != nil {
 		log.Fatalln("failed at config parse! ", err)
 	}
-	infoLog.Println("SqlUrl:", c.SqlUrl)
-	infoLog.Println("Port:", c.Port)
 
+	config.AdminPass = utils.HashPassword(config.AdminPass)
 	// Создаем сервер
-	r := gin.Default()
+	router := gin.Default()
 	jwt := utils.JwtWrapper{
-		SecretKey:       c.JWTsecret,
+		SecretKey:       config.JWTsecret,
 		Issuer:          "MovieDB_backend",
 		ExpirationHours: 24 * 7,
 	}
@@ -105,25 +101,25 @@ func main() {
 	// Подключаемся к ДБ и т п
 	service := controllers.Service{
 		Jwt:       jwt,
-		DB:        models.ConnectDatabase(c.SqlUrl),
-		AdminPass: c.AdminPass,
+		DB:        models.ConnectDatabase(config.SqlUrl),
+		AdminPass: config.AdminPass,
 	}
 
 	//Setup data
 	SetupDataCache(&service)
 
 	// Эндпоинты
-	private := r.Group("/api")
+	private := router.Group("/api")
 	private.Use(service.ValidateToken)
 	private.GET("/movies", service.FindMovies)
 	private.GET("/movies/:id", service.FindMovie)
 	private.POST("/rating/:id", service.UpdatePersonalScore)
 	private.Static("res/img", "res/img")
 
-	public := r.Group("/auth")
+	public := router.Group("/auth")
 	public.POST("/login", service.LoginUser)
 
-	admin := r.Group("/admin")
+	admin := router.Group("/admin")
 	admin.Use(service.ValidateAdmin)
 	admin.POST("/simple", service.CreateSimpleData)
 
@@ -141,5 +137,5 @@ func main() {
 	admin.GET("/findAdv", service.FindAdv)
 
 	// Запускаем сервер
-	r.Run(c.Port)
+	router.Run(config.Port)
 }
