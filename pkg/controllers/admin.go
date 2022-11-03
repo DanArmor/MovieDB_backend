@@ -230,6 +230,9 @@ func (self *Service) CreateSimpleData(context *gin.Context) {
 		data := models.Status{Name: input.Name}
 		self.DB.Create(&data)
 		context.JSON(http.StatusOK, data)
+	default:
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Wrong type for simple data!"})
+		return
 	}
 }
 
