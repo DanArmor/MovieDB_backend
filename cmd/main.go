@@ -11,73 +11,45 @@ import (
 	"github.com/DanArmor/MovieDB_backend/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
-
-func SetupDataCache(s *controllers.Service) {
-	s.MapCountry = make(map[int64]string)
-	s.MapGenre = make(map[int64]string)
-	s.MapProfs = make(map[int64]string)
-	s.MapStatus = make(map[int64]string)
-	s.MapType = make(map[int64]string)
-	s.MapArea = make(map[int64]string)
-	var g []models.Genre
-	if err := s.DB.Find(&g).Error; err != nil {
+func LoadDataCache(service *controllers.Service, tableName string, mapPtr *map[int64]string) {
+	result := []map[string]interface{}{}
+	if err := service.DB.Table(tableName).Find(&result).Error; err != nil {
 		log.Fatalln("Error during cache setup")
 	}
-	for _, genre := range g {
-		s.MapGenre[genre.ID] = genre.Name
+	for _, res := range result {
+		id := res["id"].(int64)
+		name, ok := res["name"].(string)
+		if ok == false {
+			name = res["name_en"].(string)
+		}
+		(*mapPtr)[id] = name
 	}
+}
 
-	var mt []models.MovieType
-	if err := s.DB.Find(&mt).Error; err != nil {
-		log.Fatalln("Error during cache setup")
-	}
-	for _, mtype := range mt {
-		s.MapType[mtype.ID] = mtype.Name
-	}
-
-	var c []models.Country
-	if err := s.DB.Find(&c).Error; err != nil {
-		log.Fatalln("Error during cache setup")
-	}
-	for _, country := range c {
-		s.MapCountry[country.ID] = country.Name
-	}
-
-	var st []models.Status
-	if err := s.DB.Find(&st).Error; err != nil {
-		log.Fatalln("Error during cache setup")
-	}
-	for _, status := range st {
-		s.MapStatus[status.ID] = status.Name
-	}
-
-	var profs []models.Profession
-	if err := s.DB.Find(&profs).Error; err != nil {
-		log.Fatalln("Error during cache setup")
-	}
-	for _, prof := range profs {
-		s.MapProfs[prof.ID] = prof.NameEn
-	}
-
-	var areas []models.Area
-	if err := s.DB.Find(&areas).Error; err != nil {
-		log.Fatalln("Error during cache setup")
-	}
-	for _, area := range areas {
-		s.MapArea[area.ID] = area.Name
-	}
+func SetupDataCache(service *controllers.Service) {
+	service.MapCountry = make(map[int64]string)
+	service.MapGenre = make(map[int64]string)
+	service.MapProfs = make(map[int64]string)
+	service.MapStatus = make(map[int64]string)
+	service.MapType = make(map[int64]string)
+	service.MapArea = make(map[int64]string)
+	LoadDataCache(service, "genres", &service.MapGenre)
+	LoadDataCache(service, "movie_types", &service.MapType)
+	LoadDataCache(service, "countries", &service.MapCountry)
+	LoadDataCache(service, "statuses", &service.MapStatus)
+	LoadDataCache(service, "professions", &service.MapProfs)
+	LoadDataCache(service, "areas", &service.MapArea)
 
 	var posterType models.PosterType
-	if err := s.DB.Where("name = ?", "preview").First(&posterType).Error; err != nil {
+	if err := service.DB.Where("name = ?", "preview").First(&posterType).Error; err != nil {
 		log.Fatalln("Error during cache setup")
 	}
-	s.PreviewID = posterType.ID
+	service.PreviewID = posterType.ID
 	posterType = models.PosterType{}
-	if err := s.DB.Where("name = ?", "backdrop").First(&posterType).Error; err != nil {
+	if err := service.DB.Where("name = ?", "backdrop").First(&posterType).Error; err != nil {
 		log.Fatalln("Error during cache setup")
 	}
-	s.BackdropID = posterType.ID
-
+	service.BackdropID = posterType.ID
 }
 
 func main() {
