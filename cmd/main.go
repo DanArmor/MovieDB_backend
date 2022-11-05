@@ -11,6 +11,7 @@ import (
 	"github.com/DanArmor/MovieDB_backend/pkg/utils"
 	"github.com/gin-gonic/gin"
 )
+
 func LoadDataCache(service *controllers.Service, tableName string, mapPtr *map[int64]string) {
 	result := []map[string]interface{}{}
 	if err := service.DB.Table(tableName).Find(&result).Error; err != nil {
@@ -83,10 +84,13 @@ func main() {
 	// Эндпоинты
 	private := router.Group("/api")
 	private.Use(service.ValidateToken)
-	private.GET("/movies", service.FindMovies)
+	private.POST("/movies", service.FindMovies)
 	private.GET("/movies/:id", service.FindMovie)
+	private.GET("/genres", service.GetGenres)
 	private.POST("/rating/:id", service.UpdatePersonalScore)
-	private.Static("res/img", "res/img")
+
+	img := router.Group("/res")
+	img.Static("/img", "res/img")
 
 	public := router.Group("/auth")
 	public.POST("/login", service.LoginUser)
