@@ -180,10 +180,6 @@ func (self *Service) FindMovies(context *gin.Context) {
 	if gjson.Get(string(jsonStr), "avgRateTo").Exists() {
 		dptr = dptr.Where("score <= ?", gjson.Get(jsonStr, "avgRateTo").Int())
 	}
-	if gjson.Get(string(jsonStr), "searchName").Exists() {
-		dptr = dptr.Where("name LIKE ?", "%"+gjson.Get(jsonStr, "searchName").String()+"%")
-	}
-
 	dptr = dptr.Group("id, name")
 	if sort == SORT_YEAR {
 		dptr = dptr.Order("year DESC")
@@ -194,9 +190,14 @@ func (self *Service) FindMovies(context *gin.Context) {
 		return
 	}
 	dptr = dptr.Order("id")
+	if gjson.Get(string(jsonStr), "searchName").Exists() {
+		dptr = dptr.Where("name LIKE ?", "%"+gjson.Get(jsonStr, "searchName").String()+"%").Or("alternative_name LIKE ?", "%"+gjson.Get(jsonStr, "searchName").String()+"%")
+	}
+
 
 	var movies []models.Movie
-	err = dptr.Find(&movies).Error
+	dptr = dptr.Find(&movies)
+	err = dptr.Error
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
