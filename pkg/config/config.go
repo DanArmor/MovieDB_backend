@@ -7,6 +7,8 @@ type Config struct {
 	SqlUrl    string `mapstructure:"SqlUrl"`
 	JWTsecret string `mapstructure:"JWT_SECRET_KEY"`
 	AdminPass string `mapstructure:"ADMIN_PASS"`
+	CertPath  string `mapstructure:"CERT_PATH"`
+	KeyPath   string `mapstructure:"KEY_PATH"`
 }
 
 func LoadConfig() (c Config, err error) {

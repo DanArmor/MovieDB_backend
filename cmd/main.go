@@ -113,5 +113,5 @@ func main() {
 	admin.GET("/findAdv", service.FindAdv)
 
 	// Запускаем сервер
-	router.Run(config.Port)
+	router.RunTLS(config.Port, config.CertPath, config.KeyPath)
 }
