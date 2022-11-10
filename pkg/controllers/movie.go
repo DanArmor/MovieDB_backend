@@ -101,7 +101,7 @@ func (self *Service) GetMovieShortInfo(movie models.Movie, user_id int64) (Movie
 	return info, nil
 }
 
-func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64) (MovieInfoLong, error) {
+func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64, persons_count string) (MovieInfoLong, error) {
 	shortInfo, err := self.GetMovieShortInfo(movie, user_id)
 	if err != nil {
 		return MovieInfoLong{}, err
@@ -128,7 +128,15 @@ func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64) (MovieI
 	}
 
 	var pims []models.PersonInMovie
-	if err := self.DB.Where("movie_id = ?", movie.ID).Find(&pims).Error; err != nil {
+	dptr := self.DB.Where("movie_id = ?", movie.ID)
+	if persons_count != ""{
+		count, err := strconv.Atoi(persons_count)
+		if err != nil{
+			return MovieInfoLong{}, err
+		}
+		dptr = dptr.Limit(count)
+	}
+	if err := dptr.Find(&pims).Error; err != nil {
 		return MovieInfoLong{}, err
 	}
 	for _, pim := range pims {
@@ -224,7 +232,7 @@ func (self *Service) FindMovie(context *gin.Context) {
 		return
 	}
 
-	movieLong, err := self.GetMovieLongInfo(movie, self.GetUserID(context))
+	movieLong, err := self.GetMovieLongInfo(movie, self.GetUserID(context), context.Query("persons_count"))
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
