@@ -308,7 +308,8 @@ func (self *Service) GetPDF(context *gin.Context) {
 	pdf.AddTTFFont("anpro", "/usr/share/fonts/truetype/anonymous-pro/Anonymous Pro.ttf")
 	pdf.SetFont("anpro", "", 14)
 
-	pdf.Text(fmt.Sprintf("Название: %s/%s", movieLong.Name, movieLong.AlternativeName))
+	pdf.MultiCell(&gopdf.Rect{W:gopdf.PageSizeA4.W - 60, H: gopdf.PageSizeA4.H},
+			fmt.Sprintf("Название: %s/%s", movieLong.Name, movieLong.AlternativeName))
 	BrPDF(&pdf)
 	if(movieLong.Year != 0){
 		pdf.Text(fmt.Sprintf("Год: %d    Страна: %s", movieLong.Year, movieLong.Country.Name))
@@ -319,8 +320,8 @@ func (self *Service) GetPDF(context *gin.Context) {
 	pdf.Text(fmt.Sprintf("Средняя оценка: %.2f", movieLong.Score))
 	BrPDF(&pdf)
 	pdf.Text(fmt.Sprintf("Количество оценок: %d", movieLong.Votes))
-	pdf.Image(movieLong.Preview.Url, gopdf.PageSizeA4.W/2 - 200, 100, &gopdf.Rect{W:400, H:650})
-	pdf.SetXY(20, 800)
+	pdf.Image(movieLong.Preview.Url, gopdf.PageSizeA4.W/2 - 240, 130, &gopdf.Rect{W:480, H:600})
+	pdf.SetXY(20, 780)
 	if movieLong.Status.Name != "undefined"{
 		pdf.Text(fmt.Sprintf("Длительность: %d    Статус: %s", movieLong.Duration, movieLong.Status.Name))
 	} else{
