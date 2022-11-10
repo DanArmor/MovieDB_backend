@@ -9,6 +9,7 @@ type Config struct {
 	AdminPass string `mapstructure:"ADMIN_PASS"`
 	CertPath  string `mapstructure:"CERT_PATH"`
 	KeyPath   string `mapstructure:"KEY_PATH"`
+	Domain    string `mapstructure:"DOMAIN"`
 }
 
 func LoadConfig() (c Config, err error) {

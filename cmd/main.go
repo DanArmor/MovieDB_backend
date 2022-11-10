@@ -4,6 +4,8 @@ import (
 	//"net/http"
 
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/config"
 	"github.com/DanArmor/MovieDB_backend/pkg/controllers"
@@ -53,6 +55,25 @@ func SetupDataCache(service *controllers.Service) {
 	service.BackdropID = posterType.ID
 }
 
+func RemoveContents(dir string) error {
+    d, err := os.Open(dir)
+    if err != nil {
+        return err
+    }
+    defer d.Close()
+    names, err := d.Readdirnames(-1)
+    if err != nil {
+        return err
+    }
+    for _, name := range names {
+        err = os.RemoveAll(filepath.Join(dir, name))
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
 func main() {
 	// Логер
 	// Грузим конфигурацию
@@ -76,21 +97,27 @@ func main() {
 		Jwt:       jwt,
 		DB:        models.ConnectDatabase(config.SqlUrl),
 		AdminPass: config.AdminPass,
+		Domain: config.Domain,
+		BaseUrl: "https://" + config.Domain + ":8080",
 	}
 
 	//Setup data
 	SetupDataCache(&service)
+	RemoveContents("./res/pdf")
 
 	// Эндпоинты
-	private := router.Group("/api")
-	private.Use(service.ValidateToken)
-	private.POST("/movies", service.FindMovies)
-	private.GET("/movies/:id", service.FindMovie)
-	private.GET("/genres", service.GetGenres)
-	private.POST("/rating/:id", service.UpdatePersonalScore)
+	api := router.Group("/api")
+	api.Use(service.ValidateToken)
+	api.POST("/movies", service.FindMovies)
+	api.GET("/movies/:id", service.FindMovie)
+	api.GET("/genres", service.GetGenres)
+	api.POST("/rating/:id", service.UpdatePersonalScore)
+	api.GET("/pdf/:id", service.GetPDF)
 
-	img := router.Group("/res")
-	img.Static("/img", "res/img")
+
+	res := router.Group("/res")
+	res.Static("/img", "res/img")
+	res.Static("/pdf", "res/pdf")
 
 	public := router.Group("/auth")
 	public.POST("/login", service.LoginUser)
