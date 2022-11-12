@@ -113,19 +113,22 @@ func (self *Service) FindMovies(context *gin.Context) {
 func (self *Service) FindMovie(context *gin.Context) {
 	var movie longmodels.Movie
 	user_id := self.GetUserID(context)
-	num, err := strconv.Atoi(context.Query("persons_count"))
-	if err != nil {
-		num = 0
-	}
 	self.DB.Preload("Country").Preload("MovieType").
 			Preload("Posters", self.DB.Order("poster_type_id DESC")).
 			Preload("Genres").Preload("PersonalRating", "user_id = ?", user_id).
 			Preload("Status").Preload("Fees.Area").Where("id = ?", context.Param("id")).First(&movie)
-	self.DB.Table("person_in_movies pim").Where("pim.movie_id = ?", context.Param("id")).
+	dptr := self.DB.Table("person_in_movies pim").Where("pim.movie_id = ?", context.Param("id")).
 	Joins("JOIN professions prof on prof.id = pim.profession_id").
 	Joins("JOIN people ppl on ppl.id = pim.person_id").
-	Select("ppl.id as id, ppl.name as name, ppl.name_en as name_en, prof.name_en as profession_name_en").
-	Limit(num).Find(&movie.Persons)
+	Select("ppl.id as id, ppl.name as name, ppl.name_en as name_en, prof.name_en as profession_name_en")
+	num, err := strconv.Atoi(context.Query("persons_count"))
+	if err != nil {
+		num = 0
+	}
+	if(num != 0){
+		dptr = dptr.Limit(num)
+	}
+	dptr.Find(&movie.Persons)
 
 	context.JSON(http.StatusOK, gin.H{"movie": movie})
 }
@@ -171,18 +174,23 @@ func BrPDF(pdf *gopdf.GoPdf) {
 }
 
 func (self *Service) GetPDF(context *gin.Context) {
-	var movie models.Movie
-	if err := self.DB.Where("id = ?", context.Param("id")).First(&movie).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
-
 	var movieLong longmodels.Movie
-	var err error
+	self.DB.Preload("Country").Preload("MovieType").
+			Preload("Posters", self.DB.Order("poster_type_id DESC")).
+			Preload("Genres").
+			Preload("Status").Preload("Fees.Area").Where("id = ?", context.Param("id")).First(&movieLong)
+	dptr := self.DB.Table("person_in_movies pim").Where("pim.movie_id = ?", context.Param("id")).
+	Joins("JOIN professions prof on prof.id = pim.profession_id").
+	Joins("JOIN people ppl on ppl.id = pim.person_id").
+	Select("ppl.id as id, ppl.name as name, ppl.name_en as name_en, prof.name_en as profession_name_en")
+	num, err := strconv.Atoi(context.Query("persons_count"))
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		num = 0
 	}
+	if(num != 0){
+		dptr = dptr.Limit(num)
+	}
+	dptr.Find(&movieLong.Persons)
 
 	pdf := gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})

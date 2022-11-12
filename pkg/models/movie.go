@@ -4,8 +4,8 @@ type Movie struct {
 	ID              int64     `json:"id" gorm:"primary_key"`
 	ExternalID      int64     `json:"external_id"`
 	MovieTypeID     int64     `json:"movie_type_id"`
-	Name            string    `json:"name" index:,class:FULLTEXT`
-	AlternativeName string    `json:"alternative_name" index:,class:FULLTEXT`
+	Name            string    `json:"name" gorm:"index:,class:FULLTEXT"`
+	AlternativeName string    `json:"alternative_name" gorm:"index:,class:FULLTEXT"`
 	Description     string    `json:"description"`
 	Year            int64     `json:"year" gorm:"index:,sort:desc,type:btree"`
 	StatusID        int64     `json:"status_id"`
