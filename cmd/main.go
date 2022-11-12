@@ -91,8 +91,11 @@ func main() {
 	res.Static("/img", "res/img")
 	res.Static("/pdf", "res/pdf")
 
-	public := router.Group("/auth")
-	public.POST("/login", service.LoginUser)
+	auth := router.Group("/auth")
+	auth.POST("/login", service.LoginUser)
+
+	public := router.Group("/public")
+	public.GET("/health", service.GetHealth)
 
 	admin := router.Group("/admin")
 	admin.Use(service.ValidateAdmin)
