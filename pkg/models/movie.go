@@ -4,13 +4,13 @@ type Movie struct {
 	ID              int64     `json:"id" gorm:"primary_key"`
 	ExternalID      int64     `json:"external_id"`
 	MovieTypeID     int64     `json:"movie_type_id"`
-	Name            string    `json:"name"`
-	AlternativeName string    `json:"alternative_name"`
+	Name            string    `json:"name" index:,class:FULLTEXT`
+	AlternativeName string    `json:"alternative_name" index:,class:FULLTEXT`
 	Description     string    `json:"description"`
-	Year            int64     `json:"year"`
+	Year            int64     `json:"year" gorm:"index:,sort:desc,type:btree"`
 	StatusID        int64     `json:"status_id"`
 	Duration        int64     `json:"duration"`
-	Score           float32   `json:"score" gorm:"precision:3"`
+	Score           float32   `json:"score" gorm:"precision:3;index:,sort:desc,type:btree"`
 	Votes           int64     `json:"votes"`
 	AgeRating       int64     `json:"age_rating"`
 	CountryID       int64     `json:"country_id"`
@@ -58,8 +58,8 @@ type Fees struct {
 	Value    int64  `json:"value"`
 	Currency string `json:"currency"`
 	AreaID   int64  `json:"area_id"`
-	Movie    Movie  `json:"-" gorm:"preload:false"`
-	Area     Area   `json:"-" gorm:"preload:true"`
+	Movie    Movie  `json:"-"`
+	Area     Area   `json:"area"`
 }
 
 type Status struct {

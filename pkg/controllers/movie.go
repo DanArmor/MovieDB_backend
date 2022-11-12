@@ -113,17 +113,19 @@ func (self *Service) FindMovies(context *gin.Context) {
 func (self *Service) FindMovie(context *gin.Context) {
 	var movie longmodels.Movie
 	user_id := self.GetUserID(context)
+	num, err := strconv.Atoi(context.Query("persons_count"))
+	if err != nil {
+		num = 0
+	}
 	self.DB.Preload("Country").Preload("MovieType").
-			Preload("Posters", "poster_type_id = ?", self.PreviewID).
+			Preload("Posters", self.DB.Order("poster_type_id DESC")).
 			Preload("Genres").Preload("PersonalRating", "user_id = ?", user_id).
-			Preload("Status").Preload("Fees").Preload("Persons", func(tx *gorm.DB) *gorm.DB{
-				num, err := strconv.Atoi(context.Query("persons_count"))
-				if err != nil {
-					num = 0
-				}
-				return tx.Limit(num)
-			}).Preload("Persons.Profession").First(&movie)
-				fmt.Print(movie)
+			Preload("Status").Preload("Fees.Area").Where("id = ?", context.Param("id")).First(&movie)
+	self.DB.Table("person_in_movies pim").Where("pim.movie_id = ?", context.Param("id")).
+	Joins("JOIN professions prof on prof.id = pim.profession_id").
+	Joins("JOIN people ppl on ppl.id = pim.person_id").
+	Select("ppl.id as id, ppl.name as name, ppl.name_en as name_en, prof.name_en as profession_name_en").
+	Limit(num).Find(&movie.Persons)
 
 	context.JSON(http.StatusOK, gin.H{"movie": movie})
 }
@@ -243,9 +245,9 @@ func (self *Service) GetPDF(context *gin.Context) {
 				pdf.SetXY(20, 20)
 			}
 			if person.Name != "" {
-				pdf.Text(fmt.Sprintf("%s/%s - %s", person.Name, person.NameEn, person.Profession.NameEn))
+				pdf.Text(fmt.Sprintf("%s/%s - %s", person.Name, person.NameEn, person.ProfessionNameEn))
 			} else {
-				pdf.Text(fmt.Sprintf("%s - %s", person.NameEn, person.Profession.NameEn))
+				pdf.Text(fmt.Sprintf("%s - %s", person.NameEn, person.ProfessionNameEn))
 			}
 			BrPDF(&pdf)
 		}
