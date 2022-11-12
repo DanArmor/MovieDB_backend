@@ -14,27 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func LoadDataCache(service *controllers.Service, tableName string, mapPtr *map[int64]string) {
-	result := []map[string]interface{}{}
-	if err := service.DB.Table(tableName).Find(&result).Error; err != nil {
-		log.Fatalln("Error during cache setup")
-	}
-	for _, res := range result {
-		id := res["id"].(int64)
-		name, ok := res["name"].(string)
-		if ok == false {
-			name = res["name_en"].(string)
-		}
-		(*mapPtr)[id] = name
-	}
-}
-
 func SetupDataCache(service *controllers.Service) {
-	service.MapProfs = make(map[int64]string)
-	service.MapArea = make(map[int64]string)
-	LoadDataCache(service, "professions", &service.MapProfs)
-	LoadDataCache(service, "areas", &service.MapArea)
-
 	var posterType models.PosterType
 	if err := service.DB.Where("name = ?", "preview").First(&posterType).Error; err != nil {
 		log.Fatalln("Error during cache setup")

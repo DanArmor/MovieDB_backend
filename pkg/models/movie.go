@@ -58,8 +58,8 @@ type Fees struct {
 	Value    int64  `json:"value"`
 	Currency string `json:"currency"`
 	AreaID   int64  `json:"area_id"`
-	Movie    Movie  `json:"-"`
-	Area     Area   `json:"-"`
+	Movie    Movie  `json:"-" gorm:"preload:false"`
+	Area     Area   `json:"-" gorm:"preload:true"`
 }
 
 type Status struct {

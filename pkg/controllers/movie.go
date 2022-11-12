@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	longmodels "github.com/DanArmor/MovieDB_backend/pkg/long_models"
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
 	"github.com/DanArmor/MovieDB_backend/pkg/short_models"
 	"github.com/gin-gonic/gin"
@@ -28,57 +29,6 @@ type PostPersonalRatingInput struct {
 	Score   int64 `json:"score" binding:"require"`
 }
 
-type MovieInfoShort struct {
-	ID              int64                 `json:"id"`
-	ExternalID      int64                 `json:"external_id"`
-	Name            string                `json:"name"`
-	AlternativeName string                `json:"alternative_name"`
-	Year            int64                 `json:"year"`
-	Score           float32               `json:"score"`
-	Votes           int64                 `json:"votes"`
-	MovieTypeID     int64                 `json:"-"`
-	CountryID       int64                 `json:"-"`
-	PersonalRating  models.PersonalRating `json:"personal_rating"`
-	MovieType       models.MovieType      `json:"movie_type"`
-	Country         models.Country        `json:"country"`
-	Genres          []models.Genre        `json:"genres" gorm:"many2many:movie_genres"`
-	Preview         models.Poster         `json:"poster"`
-}
-
-func (MovieInfoShort) TableName() string {
-	return "movies"
-}
-
-type PersonLong struct {
-	models.Person
-	ProfessionName string `json:"profession"`
-}
-
-type FeesLong struct {
-	models.Fees
-	AreaName string `json:"area_name"`
-}
-
-type MovieInfoLong struct {
-	MovieInfoShort
-	Description string        `json:"description"`
-	Fees        []FeesLong    `json:"fees"`
-	Status      models.Status `json:"status"`
-	Duration    int64         `json:"duration"`
-	Persons     []PersonLong  `json:"persons"`
-	AgeRating   int64         `json:"age_rating"`
-	Backdrop    models.Poster `json:"backdrop"`
-}
-
-func MovieToShort(movie models.Movie) MovieInfoShort {
-	return MovieInfoShort{
-		ID: movie.ID, ExternalID: movie.ExternalID,
-		Name: movie.Name, AlternativeName: movie.AlternativeName,
-		Year: movie.Year, Score: movie.Score,
-		Votes: movie.Votes, MovieType: movie.MovieType, Country: movie.Country,
-	}
-}
-
 func (self *Service) GetUserID(context *gin.Context) int64 {
 	token := context.Request.Header.Get("token")
 	claims, err := self.Jwt.ValidateToken(token)
@@ -92,67 +42,6 @@ func (self *Service) GetUserID(context *gin.Context) int64 {
 		return -1
 	}
 	return user.Id
-}
-
-func (self *Service) GetMovieShortInfo(movie models.Movie, user_id int64) (MovieInfoShort, error) {
-	info := MovieToShort(movie)
-
-	if err := self.DB.Where("movie_id = ?", movie.ID).Where("poster_type_id = ?", self.PreviewID).First(&info.Preview).Error; err != nil {
-		return MovieInfoShort{}, err
-	}
-	self.DB.Where("movie_id = ?", movie.ID).Where("user_id = ?", user_id).First(&info.PersonalRating)
-
-	return info, nil
-}
-
-func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64, persons_count string) (MovieInfoLong, error) {
-	shortInfo, err := self.GetMovieShortInfo(movie, user_id)
-	if err != nil {
-		return MovieInfoLong{}, err
-	}
-
-	info := MovieInfoLong{MovieInfoShort: shortInfo}
-
-	var poster models.Poster
-	if err := self.DB.Where("movie_id = ?", movie.ID).Where("poster_type_id = ?", self.BackdropID).First(&poster).Error; err != nil {
-		info.Backdrop = info.Preview
-	} else {
-		info.Backdrop = poster
-	}
-
-	info.Description = movie.Description
-	info.Duration = movie.Duration
-	info.Status = movie.Status
-	info.AgeRating = movie.AgeRating
-
-	var fees []models.Fees
-	self.DB.Where("movie_id = ?", movie.ID).Find(&fees)
-	for _, fee := range fees {
-		info.Fees = append(info.Fees, FeesLong{fee, self.MapArea[fee.AreaID]})
-	}
-
-	var pims []models.PersonInMovie
-	dptr := self.DB.Where("movie_id = ?", movie.ID)
-	if persons_count != "" {
-		count, err := strconv.Atoi(persons_count)
-		if err != nil {
-			return MovieInfoLong{}, err
-		}
-		dptr = dptr.Limit(count)
-	}
-	if err := dptr.Find(&pims).Error; err != nil {
-		return MovieInfoLong{}, err
-	}
-	for _, pim := range pims {
-		var person models.Person
-		if err := self.DB.Where("id = ?", pim.PersonID).First(&person).Error; err != nil {
-			return MovieInfoLong{}, err
-		}
-		personLong := PersonLong{person, self.MapProfs[pim.ProfessionID]}
-		info.Persons = append(info.Persons, personLong)
-	}
-
-	return info, nil
 }
 
 // GET /movies
@@ -222,20 +111,21 @@ func (self *Service) FindMovies(context *gin.Context) {
 }
 
 func (self *Service) FindMovie(context *gin.Context) {
-	var movie models.Movie
-	if err := self.DB.Where("id = ?", context.Param("id")).
-		Preload("Country").Preload("Status").Preload("MovieType").Preload("Genres").First(&movie).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
+	var movie longmodels.Movie
+	user_id := self.GetUserID(context)
+	self.DB.Preload("Country").Preload("MovieType").
+			Preload("Posters", "poster_type_id = ?", self.PreviewID).
+			Preload("Genres").Preload("PersonalRating", "user_id = ?", user_id).
+			Preload("Status").Preload("Fees").Preload("Persons", func(tx *gorm.DB) *gorm.DB{
+				num, err := strconv.Atoi(context.Query("persons_count"))
+				if err != nil {
+					num = 0
+				}
+				return tx.Limit(num)
+			}).Preload("Persons.Profession").First(&movie)
+				fmt.Print(movie)
 
-	movieLong, err := self.GetMovieLongInfo(movie, self.GetUserID(context), context.Query("persons_count"))
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	context.JSON(http.StatusOK, gin.H{"movie": movieLong})
+	context.JSON(http.StatusOK, gin.H{"movie": movie})
 }
 
 func (self *Service) UpdatePersonalScore(context *gin.Context) {
@@ -285,7 +175,8 @@ func (self *Service) GetPDF(context *gin.Context) {
 		return
 	}
 
-	movieLong, err := self.GetMovieLongInfo(movie, self.GetUserID(context), context.Query("persons_count"))
+	var movieLong longmodels.Movie
+	var err error
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -310,7 +201,7 @@ func (self *Service) GetPDF(context *gin.Context) {
 	pdf.Text(fmt.Sprintf("Средняя оценка: %.2f", movieLong.Score))
 	BrPDF(&pdf)
 	pdf.Text(fmt.Sprintf("Количество оценок: %d", movieLong.Votes))
-	pdf.Image(movieLong.Preview.Url, gopdf.PageSizeA4.W/2-240, 130, &gopdf.Rect{W: 480, H: 600})
+	pdf.Image(movieLong.Posters[0].Url, gopdf.PageSizeA4.W/2-240, 130, &gopdf.Rect{W: 480, H: 600})
 	pdf.SetXY(20, 780)
 	if movieLong.Status.Name != "undefined" {
 		pdf.Text(fmt.Sprintf("Длительность: %d    Статус: %s", movieLong.Duration, movieLong.Status.Name))
@@ -338,7 +229,7 @@ func (self *Service) GetPDF(context *gin.Context) {
 		pdf.Text("Сборы:")
 		for _, fee := range movieLong.Fees {
 			BrPDF(&pdf)
-			pdf.Text(fmt.Sprintf("%s : %d%s", fee.AreaName, fee.Value, fee.Currency))
+			pdf.Text(fmt.Sprintf("%s : %d%s", fee.Area.Name, fee.Value, fee.Currency))
 		}
 	}
 	if len(movieLong.Persons) != 0 {
@@ -352,9 +243,9 @@ func (self *Service) GetPDF(context *gin.Context) {
 				pdf.SetXY(20, 20)
 			}
 			if person.Name != "" {
-				pdf.Text(fmt.Sprintf("%s/%s - %s", person.Name, person.NameEn, person.ProfessionName))
+				pdf.Text(fmt.Sprintf("%s/%s - %s", person.Name, person.NameEn, person.Profession.NameEn))
 			} else {
-				pdf.Text(fmt.Sprintf("%s - %s", person.NameEn, person.ProfessionName))
+				pdf.Text(fmt.Sprintf("%s - %s", person.NameEn, person.Profession.NameEn))
 			}
 			BrPDF(&pdf)
 		}

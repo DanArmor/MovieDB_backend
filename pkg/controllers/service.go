@@ -9,8 +9,6 @@ type Service struct {
 	Jwt        utils.JwtWrapper
 	DB         *gorm.DB
 	AdminPass  string
-	MapProfs   map[int64]string
-	MapArea    map[int64]string
 	BackdropID int64
 	PreviewID  int64
 	Domain     string
