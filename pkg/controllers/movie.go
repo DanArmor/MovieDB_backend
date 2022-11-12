@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/models"
+	"github.com/DanArmor/MovieDB_backend/pkg/short_models"
 	"github.com/gin-gonic/gin"
 	"github.com/signintech/gopdf"
 	"github.com/tidwall/gjson"
@@ -35,11 +36,17 @@ type MovieInfoShort struct {
 	Year            int64                 `json:"year"`
 	Score           float32               `json:"score"`
 	Votes           int64                 `json:"votes"`
+	MovieTypeID     int64                 `json:"-"`
+	CountryID       int64                 `json:"-"`
 	PersonalRating  models.PersonalRating `json:"personal_rating"`
 	MovieType       models.MovieType      `json:"movie_type"`
 	Country         models.Country        `json:"country"`
-	Genres          []models.Genre        `json:"genres"`
+	Genres          []models.Genre        `json:"genres" gorm:"many2many:movie_genres"`
 	Preview         models.Poster         `json:"poster"`
+}
+
+func (MovieInfoShort) TableName() string {
+	return "movies"
 }
 
 type PersonLong struct {
@@ -68,7 +75,7 @@ func MovieToShort(movie models.Movie) MovieInfoShort {
 		ID: movie.ID, ExternalID: movie.ExternalID,
 		Name: movie.Name, AlternativeName: movie.AlternativeName,
 		Year: movie.Year, Score: movie.Score,
-		Votes: movie.Votes,
+		Votes: movie.Votes, MovieType: movie.MovieType, Country: movie.Country,
 	}
 }
 
@@ -93,17 +100,7 @@ func (self *Service) GetMovieShortInfo(movie models.Movie, user_id int64) (Movie
 	if err := self.DB.Where("movie_id = ?", movie.ID).Where("poster_type_id = ?", self.PreviewID).First(&info.Preview).Error; err != nil {
 		return MovieInfoShort{}, err
 	}
-
-	var mg []models.MovieGenres
-	self.DB.Where("movie_id = ?", movie.ID).Find(&mg)
-	for _, mg_link := range mg {
-		info.Genres = append(info.Genres, models.Genre{ID: mg_link.GenreID, Name: self.MapGenre[mg_link.GenreID]})
-	}
-
 	self.DB.Where("movie_id = ?", movie.ID).Where("user_id = ?", user_id).First(&info.PersonalRating)
-
-	info.Country = models.Country{ID: movie.CountryID, Name: self.MapCountry[movie.CountryID]}
-	info.MovieType = models.MovieType{ID: movie.MovieTypeID, Name: self.MapType[movie.MovieTypeID]}
 
 	return info, nil
 }
@@ -125,7 +122,7 @@ func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64, persons
 
 	info.Description = movie.Description
 	info.Duration = movie.Duration
-	info.Status = models.Status{ID: movie.StatusID, Name: self.MapStatus[movie.StatusID]}
+	info.Status = movie.Status
 	info.AgeRating = movie.AgeRating
 
 	var fees []models.Fees
@@ -136,9 +133,9 @@ func (self *Service) GetMovieLongInfo(movie models.Movie, user_id int64, persons
 
 	var pims []models.PersonInMovie
 	dptr := self.DB.Where("movie_id = ?", movie.ID)
-	if persons_count != ""{
+	if persons_count != "" {
 		count, err := strconv.Atoi(persons_count)
-		if err != nil{
+		if err != nil {
 			return MovieInfoLong{}, err
 		}
 		dptr = dptr.Limit(count)
@@ -209,32 +206,25 @@ func (self *Service) FindMovies(context *gin.Context) {
 		dptr = dptr.Where("name LIKE ?", "%"+gjson.Get(jsonStr, "searchName").String()+"%").Or("alternative_name LIKE ?", "%"+gjson.Get(jsonStr, "searchName").String()+"%")
 	}
 
-
-	var movies []models.Movie
-	dptr = dptr.Find(&movies)
+	user_id := self.GetUserID(context)
+	var movies []shortmodels.Movie
+	dptr = dptr.Preload("Country").Preload("MovieType").
+			Preload("Posters", "poster_type_id = ?", self.PreviewID).
+			Preload("Genres").Preload("PersonalRating", "user_id = ?", user_id).Find(&movies)
 	err = dptr.Error
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user_id := self.GetUserID(context)
-	var moviesShorts []MovieInfoShort
-	for _, movie := range movies {
-		shortInfo, err := self.GetMovieShortInfo(movie, user_id)
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		moviesShorts = append(moviesShorts, shortInfo)
-	}
 
-	context.JSON(http.StatusOK, gin.H{"movies": moviesShorts})
+	context.JSON(http.StatusOK, gin.H{"movies": movies})
 }
 
 func (self *Service) FindMovie(context *gin.Context) {
 	var movie models.Movie
-	if err := self.DB.Where("id = ?", context.Param("id")).First(&movie).Error; err != nil {
+	if err := self.DB.Where("id = ?", context.Param("id")).
+		Preload("Country").Preload("Status").Preload("MovieType").Preload("Genres").First(&movie).Error; err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
 		return
 	}
@@ -274,16 +264,16 @@ func (self *Service) GetGenres(context *gin.Context) {
 	var genres []models.Genre
 	self.DB.Find(&genres)
 
-	context.JSON(http.StatusOK, gin.H{"genres" : genres})
+	context.JSON(http.StatusOK, gin.H{"genres": genres})
 }
 
 func TempFileNamePDf() string {
-    randBytes := make([]byte, 16)
-    rand.Read(randBytes)
-    return hex.EncodeToString(randBytes) + ".pdf"
+	randBytes := make([]byte, 16)
+	rand.Read(randBytes)
+	return hex.EncodeToString(randBytes) + ".pdf"
 }
 
-func BrPDF(pdf *gopdf.GoPdf){
+func BrPDF(pdf *gopdf.GoPdf) {
 	pdf.Br(20)
 	pdf.SetX(20)
 }
@@ -308,10 +298,10 @@ func (self *Service) GetPDF(context *gin.Context) {
 	pdf.AddTTFFont("anpro", "/usr/share/fonts/truetype/anonymous-pro/Anonymous Pro.ttf")
 	pdf.SetFont("anpro", "", 14)
 
-	pdf.MultiCell(&gopdf.Rect{W:gopdf.PageSizeA4.W - 60, H: gopdf.PageSizeA4.H},
-			fmt.Sprintf("Название: %s/%s", movieLong.Name, movieLong.AlternativeName))
+	pdf.MultiCell(&gopdf.Rect{W: gopdf.PageSizeA4.W - 60, H: gopdf.PageSizeA4.H},
+		fmt.Sprintf("Название: %s/%s", movieLong.Name, movieLong.AlternativeName))
 	BrPDF(&pdf)
-	if(movieLong.Year != 0){
+	if movieLong.Year != 0 {
 		pdf.Text(fmt.Sprintf("Год: %d    Страна: %s", movieLong.Year, movieLong.Country.Name))
 	} else {
 		pdf.Text(fmt.Sprintf("Год: Нет информации    Страна: %s", movieLong.Country.Name))
@@ -320,50 +310,50 @@ func (self *Service) GetPDF(context *gin.Context) {
 	pdf.Text(fmt.Sprintf("Средняя оценка: %.2f", movieLong.Score))
 	BrPDF(&pdf)
 	pdf.Text(fmt.Sprintf("Количество оценок: %d", movieLong.Votes))
-	pdf.Image(movieLong.Preview.Url, gopdf.PageSizeA4.W/2 - 240, 130, &gopdf.Rect{W:480, H:600})
+	pdf.Image(movieLong.Preview.Url, gopdf.PageSizeA4.W/2-240, 130, &gopdf.Rect{W: 480, H: 600})
 	pdf.SetXY(20, 780)
-	if movieLong.Status.Name != "undefined"{
+	if movieLong.Status.Name != "undefined" {
 		pdf.Text(fmt.Sprintf("Длительность: %d    Статус: %s", movieLong.Duration, movieLong.Status.Name))
-	} else{
+	} else {
 		pdf.Text(fmt.Sprintf("Длительность: %d    Статус: %s", movieLong.Duration, "Неизвестно"))
 	}
 	BrPDF(&pdf)
-	if movieLong.AgeRating != 0{
+	if movieLong.AgeRating != 0 {
 		pdf.Text(fmt.Sprintf("Возрастной рейтинг: %d+", movieLong.AgeRating))
-	} else{
+	} else {
 		pdf.Text(fmt.Sprintf("Возрастной рейтинг: Неизвестно"))
 	}
 	pdf.AddPage()
 	pdf.SetXY(20, 20)
-	pdf.MultiCell(&gopdf.Rect{W:gopdf.PageSizeA4.W - 60, H: gopdf.PageSizeA4.H},
-		 fmt.Sprintf("Описание: %s", movieLong.Description))
+	pdf.MultiCell(&gopdf.Rect{W: gopdf.PageSizeA4.W - 60, H: gopdf.PageSizeA4.H},
+		fmt.Sprintf("Описание: %s", movieLong.Description))
 	var genresNames []string
-	for _, genre := range movieLong.Genres{
+	for _, genre := range movieLong.Genres {
 		genresNames = append(genresNames, genre.Name)
 	}
 	BrPDF(&pdf)
 	pdf.Text(fmt.Sprintf("Жанры: %s", strings.Join(genresNames, ", ")))
-	if len(movieLong.Fees) != 0{
+	if len(movieLong.Fees) != 0 {
 		BrPDF(&pdf)
 		pdf.Text("Сборы:")
-		for _, fee := range movieLong.Fees{
+		for _, fee := range movieLong.Fees {
 			BrPDF(&pdf)
 			pdf.Text(fmt.Sprintf("%s : %d%s", fee.AreaName, fee.Value, fee.Currency))
 		}
 	}
-	if len(movieLong.Persons) != 0{
+	if len(movieLong.Persons) != 0 {
 		pdf.AddPage()
 		pdf.SetXY(20, 20)
 		pdf.Text("Участники:")
 		BrPDF(&pdf)
-		for index, person := range movieLong.Persons{
-			if index != 0 && index%40 == 0{
+		for index, person := range movieLong.Persons {
+			if index != 0 && index%40 == 0 {
 				pdf.AddPage()
 				pdf.SetXY(20, 20)
-			} 
-			if(person.Name != ""){
+			}
+			if person.Name != "" {
 				pdf.Text(fmt.Sprintf("%s/%s - %s", person.Name, person.NameEn, person.ProfessionName))
-			} else{
+			} else {
 				pdf.Text(fmt.Sprintf("%s - %s", person.NameEn, person.ProfessionName))
 			}
 			BrPDF(&pdf)
@@ -371,8 +361,8 @@ func (self *Service) GetPDF(context *gin.Context) {
 	}
 
 	pdfName := TempFileNamePDf()
-	pdf.WritePdf("./res/pdf/" + pdfName) 
-	time.AfterFunc(1 * time.Hour, func() { os.Remove("./res/pdf/" + pdfName) })
+	pdf.WritePdf("./res/pdf/" + pdfName)
+	time.AfterFunc(1*time.Hour, func() { os.Remove("./res/pdf/" + pdfName) })
 
 	context.JSON(http.StatusOK, gin.H{"pdf": self.BaseUrl + "/res/pdf/" + pdfName})
 }

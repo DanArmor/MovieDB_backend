@@ -30,16 +30,8 @@ func LoadDataCache(service *controllers.Service, tableName string, mapPtr *map[i
 }
 
 func SetupDataCache(service *controllers.Service) {
-	service.MapCountry = make(map[int64]string)
-	service.MapGenre = make(map[int64]string)
 	service.MapProfs = make(map[int64]string)
-	service.MapStatus = make(map[int64]string)
-	service.MapType = make(map[int64]string)
 	service.MapArea = make(map[int64]string)
-	LoadDataCache(service, "genres", &service.MapGenre)
-	LoadDataCache(service, "movie_types", &service.MapType)
-	LoadDataCache(service, "countries", &service.MapCountry)
-	LoadDataCache(service, "statuses", &service.MapStatus)
 	LoadDataCache(service, "professions", &service.MapProfs)
 	LoadDataCache(service, "areas", &service.MapArea)
 
