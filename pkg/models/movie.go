@@ -57,7 +57,7 @@ type Fees struct {
 	MovieID  int64  `json:"movie_id"`
 	Value    int64  `json:"value"`
 	Currency string `json:"currency"`
-	AreaID   int64  `json:"area_id"`
+	AreaID   int64  `json:"-"`
 	Movie    Movie  `json:"-"`
 	Area     Area   `json:"area"`
 }

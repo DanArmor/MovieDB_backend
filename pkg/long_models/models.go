@@ -27,9 +27,9 @@ type Movie struct {
 }
 
 type Person struct {
-	ID             int64  `json:"id" gorm:"primary_key"`
-	Name           string `json:"name"`
-	NameEn         string `json:"name_en"`
-	ProfessionID   int64  `json:"-"`
+	ID               int64  `json:"id" gorm:"primary_key"`
+	Name             string `json:"name"`
+	NameEn           string `json:"name_en"`
+	ProfessionID     int64  `json:"-"`
 	ProfessionNameEn string `json:"profession_name"`
 }

@@ -70,7 +70,7 @@ func main() {
 		DB:        models.ConnectDatabase(config.SqlUrl),
 		AdminPass: config.AdminPass,
 		Domain: config.Domain,
-		BaseUrl: "https://" + config.Domain + ":8080",
+		BaseUrl: "https://" + config.Domain,
 	}
 
 	//Setup data
@@ -85,11 +85,6 @@ func main() {
 	api.GET("/genres", service.GetGenres)
 	api.POST("/rating/:id", service.UpdatePersonalScore)
 	api.GET("/pdf/:id", service.GetPDF)
-
-
-	res := router.Group("/res")
-	res.Static("/img", "res/img")
-	res.Static("/pdf", "res/pdf")
 
 	auth := router.Group("/auth")
 	auth.POST("/login", service.LoginUser)

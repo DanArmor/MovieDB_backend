@@ -40,6 +40,7 @@ func (self *Service) GetUserID(context *gin.Context) int64 {
 // GET /movies
 // Find a movie
 func (self *Service) FindMovies(context *gin.Context) {
+	defer context.Request.Body.Close()
 	jsonBytes, err := ioutil.ReadAll(context.Request.Body)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
@@ -107,7 +108,7 @@ func (self *Service) FindMovie(context *gin.Context) {
 	var movie longmodels.Movie
 	user_id := self.GetUserID(context)
 	self.DB.Preload("Country").Preload("MovieType").
-			Preload("Posters", self.DB.Order("poster_type_id DESC")).
+			Preload("Posters", "poster_type_id = ?", self.PreviewID).
 			Preload("Genres").Preload("PersonalRating", "user_id = ?", user_id).
 			Preload("Status").Preload("Fees.Area").Where("id = ?", context.Param("id")).First(&movie)
 	dptr := self.DB.Table("person_in_movies pim").Where("pim.movie_id = ?", context.Param("id")).
@@ -127,6 +128,7 @@ func (self *Service) FindMovie(context *gin.Context) {
 }
 
 func (self *Service) UpdatePersonalScore(context *gin.Context) {
+	defer context.Request.Body.Close()
 	jsonData, err := ioutil.ReadAll(context.Request.Body)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Error during reading json data!"})
@@ -136,16 +138,17 @@ func (self *Service) UpdatePersonalScore(context *gin.Context) {
 	score := gjson.Get(string(jsonData), "score").Int()
 	movie_id, _ := strconv.ParseInt(context.Param("id"), 10, 64)
 	user_id := self.GetUserID(context)
-	var rating models.PersonalRating
-	if err := self.DB.Where("movie_id = ?", movie_id).Where("user_id = ?", user_id).First(&rating).Error; err != nil {
-		rating = models.PersonalRating{MovieID: movie_id, UserID: user_id, Score: score}
+	var ratingArr []models.PersonalRating
+	if err := self.DB.Where("movie_id = ?", movie_id).Where("user_id = ?", user_id).First(&ratingArr).Error; err != nil {
+		rating := models.PersonalRating{MovieID: movie_id, UserID: user_id, Score: score}
+		ratingArr = append(ratingArr, rating)
 		self.DB.Create(&rating)
 	} else {
-		rating.Score = score
-		self.DB.Updates(&rating)
+		ratingArr[0].Score = score
+		self.DB.Updates(&ratingArr[0])
 	}
 
-	context.JSON(http.StatusOK, rating)
+	context.JSON(http.StatusOK, ratingArr)
 }
 
 func (self *Service) GetGenres(context *gin.Context) {

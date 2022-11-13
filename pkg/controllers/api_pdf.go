@@ -29,9 +29,9 @@ func BrPDF(pdf *gopdf.GoPdf) {
 func (self *Service) GetPDF(context *gin.Context) {
 	var movieLong longmodels.Movie
 	self.DB.Preload("Country").Preload("MovieType").
-			Preload("Posters", self.DB.Order("poster_type_id DESC")).
-			Preload("Genres").
-			Preload("Status").Preload("Fees.Area").Where("id = ?", context.Param("id")).First(&movieLong)
+			Preload("Posters", "poster_type_id = ?", self.PreviewID).
+			Preload("Genres").Preload("Status").Preload("Fees.Area").
+			Where("id = ?", context.Param("id")).First(&movieLong)
 	dptr := self.DB.Table("person_in_movies pim").Where("pim.movie_id = ?", context.Param("id")).
 	Joins("JOIN professions prof on prof.id = pim.profession_id").
 	Joins("JOIN people ppl on ppl.id = pim.person_id").
