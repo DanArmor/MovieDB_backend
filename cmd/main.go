@@ -3,9 +3,15 @@ package main
 import (
 	//"net/http"
 
+	"context"
+	"errors"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"github.com/DanArmor/MovieDB_backend/pkg/config"
 	"github.com/DanArmor/MovieDB_backend/pkg/controllers"
@@ -108,7 +114,24 @@ func main() {
 	admin.GET("/find", service.FindSimple)
 	admin.GET("/findAll", service.FindSimpleAll)
 	admin.GET("/findAdv", service.FindAdv)
-
+	srv := &http.Server{
+		Addr: "127.0.0.1" + config.Port,
+		Handler: router,
+	}
 	// Запускаем сервер
-	router.RunTLS(config.Port, config.CertPath, config.KeyPath)
+	go func(){
+		if err := srv.ListenAndServeTLS(config.CertPath, config.KeyPath); err != nil && errors.Is(err, http.ErrServerClosed) {
+			log.Printf("Listen: %s\n", err)
+		}
+	}()
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGINT)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown: ", err)
+	}
+
+	log.Println("Server exiting")
 }
