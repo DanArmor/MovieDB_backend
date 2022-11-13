@@ -72,7 +72,7 @@ func main() {
 		Domain: config.Domain,
 		BaseUrl: "https://" + config.Domain,
 	}
-
+	router.SetTrustedProxies([]string{"127.0.0.1:80"})
 	//Setup data
 	SetupDataCache(&service)
 	RemoveContents("./res/pdf")
