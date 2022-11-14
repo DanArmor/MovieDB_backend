@@ -125,7 +125,7 @@ func main() {
 		}
 	}()
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGUSR1)
+	signal.Notify(quit, syscall.SIGUSR1, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

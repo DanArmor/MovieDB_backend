@@ -130,7 +130,7 @@ func (self *Service) CreateMovie(context *gin.Context) {
 
 type CreatePersonInput struct {
 	Name   string `json:"name"`
-	NameEn string `json:"name_en"`
+	NameEn string `json:"name_en" binding:"required"`
 }
 
 func (self *Service) CreatePerson(context *gin.Context) {
